@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using System.Linq;
 using UnityEngine;
 using Mirror;
-using System.Linq;
 using Game.Shared;
+
 
 public class ServerManager : NetworkBehaviour
 {
@@ -16,29 +17,152 @@ public class ServerManager : NetworkBehaviour
     [SyncVar]
     public int CurrentRound = -1;
 
-    public override void OnStartServer()
-    {
-        base.OnStartServer();
-        // test code for dict
-        Debug.Log("In OnStartServer function.");
-        // seems this function didn't excute
+    [SyncVar]
+    public Wind RoundWind = Wind.EAST;
 
-    }
+    [SyncVar]
+    public int RoundCount = -1;
 
     public void Start()
     {
         Debug.Log("Server started. Ready for the first round initialization.");
-        // test code for dict
-        //Debug.Log(TileDictionary.TileToString.ContainsKey(0));
+        for(int i = 0; i < 16; ++i)
+        {
+            StartNewRound();
+        }
     }
+
     public void StartNewRound()
     {
+        if (RoundWind > Wind.NORTH)
+        {
+            Debug.Log("Game over. All rounds completed.");
+            return;
+        }
+
+        RoundCount++;
+
+        if (RoundCount == 4)
+        {
+            RoundCount = 0;
+            AdjustPositionsAfterRound();
+            RoundWind++;
+        }
+        else
+        {
+            RotatePlayers();
+        }
+
         CurrentRound++;
+
         InitializeTiles();
         ShuffleTiles();
         DealTilesToPlayers();
         UpdatePlayerStates();
-        Debug.Log("New round started: Round " + CurrentRound);
+
+        Debug.Log($"New round started: Round {CurrentRound}, Wind: {RoundWind}");
+    }
+
+    private void RotatePlayers()
+    {
+        var seatWinds = PlayerManagers.Select(pm => pm.PlayerStatus.SeatWind).ToList();
+        if (seatWinds.Count != PlayerManagers.Length)
+        {
+            Debug.LogError("Mismatch between seat winds and player managers count.");
+            return;
+        }
+
+        var rotated = new List<Wind>
+        {
+            seatWinds[3], // North becomes East
+            seatWinds[0], // East becomes South
+            seatWinds[1], // South becomes West
+            seatWinds[2]  // West becomes North
+        };
+
+        PlayerManager[] tempManagers = new PlayerManager[PlayerManagers.Length];
+
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            PlayerManagers[i].PlayerStatus.SeatWind = rotated[i];
+        }
+
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            tempManagers[(int)PlayerManagers[i].PlayerStatus.SeatWind - (int)Wind.EAST] = PlayerManagers[i];
+        }
+
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            PlayerManagers[i] = tempManagers[i];
+        }
+
+        Debug.Log("Players rotated and reassigned.");
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            Debug.Log($"Index {i}: Player {PlayerManagers[i].PlayerName} - Wind: {PlayerManagers[i].PlayerStatus.SeatWind}");
+        }
+    }
+
+    private void AdjustPositionsAfterRound()
+    {
+        var seatWinds = PlayerManagers.Select(pm => pm.PlayerStatus.SeatWind).ToList();
+        if (seatWinds.Count != PlayerManagers.Length)
+        {
+            Debug.LogError("Mismatch between seat winds and player managers count.");
+            return;
+        }
+
+        PlayerManager[] tempManagers = new PlayerManager[PlayerManagers.Length];
+
+        if (RoundWind == Wind.EAST || RoundWind == Wind.WEST)
+        {
+            // Swap East and South, West and North
+            var swapped = new List<Wind>
+            {
+                seatWinds[1], // South
+                seatWinds[0], // East
+                seatWinds[3], // North
+                seatWinds[2]  // West
+            };
+
+            for (int i = 0; i < PlayerManagers.Length; i++)
+            {
+                PlayerManagers[i].PlayerStatus.SeatWind = swapped[i];
+            }
+        }
+        else if (RoundWind == Wind.SOUTH)
+        {
+            // Full rotate
+            var rotated = new List<Wind>
+            {
+                seatWinds[2], // West
+                seatWinds[0], // East
+                seatWinds[3], // North
+                seatWinds[1]  // South
+            };
+
+            for (int i = 0; i < PlayerManagers.Length; i++)
+            {
+                PlayerManagers[i].PlayerStatus.SeatWind = rotated[i];
+            }
+        }
+
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            tempManagers[(int)PlayerManagers[i].PlayerStatus.SeatWind - (int)Wind.EAST] = PlayerManagers[i];
+        }
+
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            PlayerManagers[i] = tempManagers[i];
+        }
+
+        Debug.Log("Player positions adjusted after round and reassigned.");
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            Debug.Log($"Index {i}: Player {PlayerManagers[i].PlayerName} - Wind: {PlayerManagers[i].PlayerStatus.SeatWind}");
+        }
     }
 
     private void InitializeTiles()
@@ -95,6 +219,19 @@ public class ServerManager : NetworkBehaviour
     }
 
     [Server]
+    public void PlayerDiscardTile(PlayerManager playerManager, int tile)
+    {
+        if (!playerManager.PlayerHand.ClosedTiles.Remove(tile))
+        {
+            Debug.LogError("Player " + playerManager.PlayerName + " tried to discard a tile not in their hand: " + tile);
+            return;
+        }
+
+        playerManager.PlayerKawaTiles.Add(tile);
+        Debug.Log("Player " + playerManager.PlayerName + " discarded tile: " + tile);
+    }
+
+    [Server]
     public void DealTilesToPlayers()
     {
         foreach (var conn in NetworkServer.connections.Values)
@@ -114,18 +251,6 @@ public class ServerManager : NetworkBehaviour
         }
     }
 
-    [Server]
-    public void PlayerDiscardTile(PlayerManager playerManager, int tile)
-    {
-        if (!playerManager.PlayerHand.ClosedTiles.Remove(tile))
-        {
-            Debug.LogError("Player " + playerManager.PlayerName + " tried to discard a tile not in their hand: " + tile);
-            return;
-        }
-
-        playerManager.PlayerKawaTiles.Add(tile);
-        Debug.Log("Player " + playerManager.PlayerName + " discarded tile: " + tile);
-    }
 
     [Server]
     private void UpdatePlayerStates()
@@ -134,27 +259,20 @@ public class ServerManager : NetworkBehaviour
         {
             if (conn.identity.TryGetComponent<PlayerManager>(out var playerManager))
             {
-                playerManager.CurrentScore += 10; // Example score update
-                playerManager.SeatWind = (playerManager.SeatWind + 1) % 4; // Rotate winds
-                playerManager.RoundWind = CurrentRound % 4; // Example round wind logic
-                playerManager.IsPlayerTurn = false;
-
-                Debug.Log($"Updated player {playerManager.PlayerName} - Score: {playerManager.CurrentScore}, SeatWind: {playerManager.SeatWind}, RoundWind: {playerManager.RoundWind}");
+                playerManager.PlayerStatus.IsPlayerTurn = false;
             }
         }
 
-        // Assign first turn to the player with SeatWind = EAST
         var firstPlayer = NetworkServer.connections.Values
             .Select(conn => conn.identity.GetComponent<PlayerManager>())
-            .FirstOrDefault(player => player != null && player.SeatWind == (int)Wind.EAST);
+            .FirstOrDefault(player => player != null && player.PlayerStatus.SeatWind == Wind.EAST);
 
         if (firstPlayer != null)
         {
-            firstPlayer.IsPlayerTurn = true;
+            firstPlayer.PlayerStatus.IsPlayerTurn = true;
             Debug.Log("Player " + firstPlayer.PlayerName + " starts the round.");
         }
     }
-
     [Server]
     public void CheckWinningCondition(PlayerManager playerManager)
     {
@@ -213,21 +331,6 @@ public class ServerManager : NetworkBehaviour
             return;
         }
 
-        AdvanceTurn(playerManager);
-    }
-
-    [Server]
-    private void AdvanceTurn(PlayerManager currentTurnPlayer)
-    {
-        currentTurnPlayer.IsPlayerTurn = false;
-        var nextPlayer = NetworkServer.connections.Values
-            .Select(conn => conn.identity.GetComponent<PlayerManager>())
-            .FirstOrDefault(player => player != null && player.SeatWind == (currentTurnPlayer.SeatWind + 1) % 4);
-
-        if (nextPlayer != null)
-        {
-            nextPlayer.IsPlayerTurn = true;
-            Debug.Log("Player " + nextPlayer.PlayerName + " is now taking their turn.");
-        }
+        StartNewRound();
     }
 }

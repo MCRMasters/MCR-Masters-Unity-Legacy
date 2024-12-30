@@ -11,17 +11,7 @@ public class PlayerManager : NetworkBehaviour
     [SyncVar]
     public string PlayerName;
 
-    [SyncVar]
-    public int CurrentScore;
-
-    [SyncVar]
-    public int SeatWind;
-
-    [SyncVar]
-    public int RoundWind;
-
-    [SyncVar]
-    public bool IsPlayerTurn;
+    public PlayerStatus PlayerStatus;
 
     public ServerManager ServerManager;
 
@@ -32,6 +22,6 @@ public class PlayerManager : NetworkBehaviour
 
     public bool CheckIfPlayerTurn()
     {
-        return IsPlayerTurn;
+        return PlayerStatus.IsPlayerTurn;
     }
 }

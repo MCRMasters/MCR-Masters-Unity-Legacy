@@ -42,24 +42,24 @@ namespace Game.Shared
     public class PlayerStatus
     {
         public int CurrentScore { get; set; }
-        public int SeatWind { get; set; }
-        public int RoundWind { get; set; }
+        public Wind SeatWind { get; set; }
+        public Wind RoundWind { get; set; }
         public bool IsPlayerTurn { get; set; }
 
         public PlayerStatus()
         {
             CurrentScore = 0;
-            SeatWind = (int)Wind.EAST;
-            RoundWind = (int)Wind.EAST;
+            SeatWind = Wind.EAST;
+            RoundWind = Wind.EAST;
             IsPlayerTurn = false;
         }
 
-        public PlayerStatus(int seatWind, int roundWind)
+        public PlayerStatus(Wind seatWind, Wind roundWind)
         {
             CurrentScore = 0;
             SeatWind = seatWind;
             RoundWind = roundWind;
-            IsPlayerTurn = (seatWind == (int)Wind.EAST);
+            IsPlayerTurn = (seatWind == Wind.EAST);
         }
 
         public override string ToString()
