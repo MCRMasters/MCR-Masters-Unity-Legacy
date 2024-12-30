@@ -80,3 +80,6 @@ Temp/
 
 # Ignore .vscode folder
 .vscode/
+
+# Ignore clones for ParrelSync
+MCR Masters_clone_*/

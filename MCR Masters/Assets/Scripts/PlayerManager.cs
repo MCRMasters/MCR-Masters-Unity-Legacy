@@ -11,14 +11,20 @@ public class PlayerManager : NetworkBehaviour
     [SyncVar]
     public string PlayerName;
 
-    public PlayerStatus PlayerStatus;
+    public PlayerStatus PlayerStatus = new PlayerStatus();
 
     public ServerManager ServerManager;
 
-    public Hand PlayerHand = new Hand();
-    public WinningCondition PlayerWinningCondition = new WinningCondition();
+    private Hand PlayerHand = new Hand();  
+    private WinningCondition PlayerWinningCondition = new WinningCondition();
     public List<int> PlayerKawaTiles = new List<int>();
 
+
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+        Debug.Log("In client, player prefab started.");
+    }
 
     public bool CheckIfPlayerTurn()
     {

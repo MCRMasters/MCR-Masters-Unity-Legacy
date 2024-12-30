@@ -13,6 +13,7 @@ public class ServerManager : NetworkBehaviour
     private static int currentIndex = 0;
     private const int TotalTiles = 144;
     public PlayerManager[] PlayerManagers;
+    private HashSet<int> completedPlayers = new HashSet<int>();
 
     [SyncVar]
     public int CurrentRound = -1;
@@ -23,15 +24,131 @@ public class ServerManager : NetworkBehaviour
     [SyncVar]
     public int RoundCount = -1;
 
-    public void Start()
+    private bool gameStarted = false;
+
+    void Awake()
     {
-        Debug.Log("Server started. Ready for the first round initialization.");
+        DontDestroyOnLoad(this.gameObject);
+    }
+
+    [Server]
+    public void GameStarted()
+    {
+        if (gameStarted)
+        {
+            Debug.LogWarning("Game already started. Ignoring duplicate call.");
+            return;
+        }
+
+        gameStarted = true;
+
+        Debug.Log("Game started. Ready for the first round initialization.");
+        Debug.Log($"PlayerManagers count: {PlayerManagers?.Length}");
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            Debug.Log($"PlayerManger name: {PlayerManagers[i].PlayerName}");
+        }
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            if (PlayerManagers[i] == null)
+            {
+                Debug.LogError($"PlayerManager at index {i} is null.");
+            }
+            else if (PlayerManagers[i].PlayerStatus == null)
+            {
+                Debug.LogError($"PlayerManager {PlayerManagers[i].PlayerName} player index {PlayerManagers[i].PlayerIndex} at array index {i} has null PlayerStatus.");
+            }
+        }
+
+        completedPlayers.Clear();
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            if(PlayerManagers[i] != null)
+            {
+                var networkIdentity = PlayerManagers[i].GetComponent<NetworkIdentity>();
+                Debug.Log(networkIdentity.ToString() +  networkIdentity.connectionToClient.ToString() + i.ToString());
+                if(networkIdentity == null || networkIdentity.connectionToClient == null)
+                {
+                    Debug.LogWarning($"PlayerManager[{i}] does not have a valid connection or NetworkIdentity.");
+                }
+                else
+                {
+                    //TargetInitializePlayer(networkIdentity.connectionToClient, i);
+                }
+            }
+        }
+    }
+
+    [TargetRpc]
+    public void TargetInitializePlayer(NetworkConnection target, int playerIndex)
+    {
+        return;
+        // 클라이언트에서 초기화 작업 수행
+        Debug.Log($"TargetInitializePlayer called for player index: {playerIndex}");
+        
+        if (target.identity != null)
+        {
+            var playerManager = target.identity.GetComponent<PlayerManager>();
+            if (playerManager != null)
+            {
+                // PlayerManager를 통해 PlayerStatus 초기화
+                playerManager.PlayerStatus = new PlayerStatus
+                {
+                    CurrentScore = 0,
+                    SeatWind = (Wind)((int)Wind.EAST + playerIndex), // 수정된 SeatWind 초기화
+                    RoundWind = Wind.EAST,
+                    IsPlayerTurn = playerIndex == 0 // 예시: index 0인 플레이어가 첫 번째 턴
+                };
+
+                Debug.Log($"PlayerManager for index {playerIndex} initialized on client. SeatWind: {playerManager.PlayerStatus.SeatWind}");
+            }
+            else
+            {
+                Debug.LogError("PlayerManager component not found on the NetworkIdentity.");
+            }
+        }
+        else
+        {
+            Debug.LogError("NetworkIdentity for the connection is null.");
+        }
+
+        // 서버에 완료 상태 알리기
+        CmdNotifyInitializationComplete(playerIndex);
+    }
+
+
+
+    [Command]
+    public void CmdNotifyInitializationComplete(int playerIndex)
+    {
+        Debug.Log($"Player {playerIndex} initialization complete on server.");
+        MarkInitializationComplete(playerIndex);
+    }
+
+    public void MarkInitializationComplete(int playerIndex)
+    {
+        completedPlayers.Add(playerIndex);
+
+        // 모든 플레이어의 초기화가 완료되었는지 확인
+        if (completedPlayers.Count == PlayerManagers.Length)
+        {
+            Debug.Log("All players have been initialized. Starting the next step.");
+            StartNewRounds();
+        }
+    }
+
+
+    [Server]
+    public void StartNewRounds()
+    {
         for(int i = 0; i < 16; ++i)
         {
             StartNewRound();
         }
     }
 
+
+    [Server]
     public void StartNewRound()
     {
         if (RoundWind > Wind.NORTH)
@@ -65,7 +182,10 @@ public class ServerManager : NetworkBehaviour
 
     private void RotatePlayers()
     {
-        var seatWinds = PlayerManagers.Select(pm => pm.PlayerStatus.SeatWind).ToList();
+        var seatWinds = PlayerManagers
+    .Where(pm => pm != null && pm.PlayerStatus != null) // null 체크 추가
+    .Select(pm => pm.PlayerStatus.SeatWind)
+    .ToList();
         if (seatWinds.Count != PlayerManagers.Length)
         {
             Debug.LogError("Mismatch between seat winds and player managers count.");
@@ -221,14 +341,14 @@ public class ServerManager : NetworkBehaviour
     [Server]
     public void PlayerDiscardTile(PlayerManager playerManager, int tile)
     {
-        if (!playerManager.PlayerHand.ClosedTiles.Remove(tile))
-        {
-            Debug.LogError("Player " + playerManager.PlayerName + " tried to discard a tile not in their hand: " + tile);
-            return;
-        }
+        //if (!playerManager.PlayerHand.ClosedTiles.Remove(tile))
+        //{
+        //    Debug.LogError("Player " + playerManager.PlayerName + " tried to discard a tile not in their hand: " + tile);
+        //    return;
+        //}
 
-        playerManager.PlayerKawaTiles.Add(tile);
-        Debug.Log("Player " + playerManager.PlayerName + " discarded tile: " + tile);
+        //playerManager.PlayerKawaTiles.Add(tile);
+        //Debug.Log("Player " + playerManager.PlayerName + " discarded tile: " + tile);
     }
 
     [Server]
@@ -244,8 +364,8 @@ public class ServerManager : NetworkBehaviour
                     Debug.LogError("Not enough tiles to deal to player " + playerManager.PlayerName);
                     return;
                 }
-                playerManager.PlayerHand.ClosedTiles.AddRange(handTiles);
-                playerManager.PlayerHand.ClosedTiles.Sort();
+                //playerManager.PlayerHand.ClosedTiles.AddRange(handTiles);
+                //playerManager.PlayerHand.ClosedTiles.Sort();
                 Debug.Log("Dealt starting hand to player " + playerManager.PlayerName);
             }
         }
@@ -277,10 +397,10 @@ public class ServerManager : NetworkBehaviour
     public void CheckWinningCondition(PlayerManager playerManager)
     {
         // Example logic for checking a winning condition
-        if (playerManager.PlayerHand.ClosedTiles.Count == 0)
-        {
-            Debug.Log("Player " + playerManager.PlayerName + " has no tiles left and wins the round!");
-        }
+        //if (playerManager.PlayerHand.ClosedTiles.Count == 0)
+        //{
+        //    Debug.Log("Player " + playerManager.PlayerName + " has no tiles left and wins the round!");
+        //}
     }
 
     [Server]

@@ -89,6 +89,10 @@ MonoBehaviour:
   GameplayScene: Assets/Scenes/GameScene.unity
   _allPlayersReady: 0
   clientIndex: 0
+  RequiredPlayerCount: 4
+  serverManagerPrefab: {fileID: 0}
+  ipInputField: {fileID: 8192366956451323986, guid: 6469d039173a36242a9395ac1ee7393d, type: 3}
+  connectButton: {fileID: 8632104802985342957, guid: 5db5e6d46cb95464c883b83278755612, type: 3}
 --- !u!114 &2203482217970152134
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -101,7 +105,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b0fecffa3f624585964b0d0eb21b18e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  port: 7777
+  port: 9000
   DualMode: 1
   NoDelay: 1
   Interval: 10
@@ -116,7 +120,7 @@ MonoBehaviour:
   ReliableMaxMessageSize: 297433
   UnreliableMaxMessageSize: 1194
   debugLog: 0
-  statisticsGUI: 0
+  statisticsGUI: 1
   statisticsLog: 0
 --- !u!114 &6341353215537434630
 MonoBehaviour:
