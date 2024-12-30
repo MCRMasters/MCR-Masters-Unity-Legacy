@@ -53,9 +53,20 @@ public class CustomNetworkRoomManager : NetworkRoomManager
         AssignPlayerIndicesAndNames(serverManagerGameObject);
     }
 
+
     private void AssignPlayerIndicesAndNames(GameObject serverManagerGameObject)
     {
-        // 플레이어 인덱스를 랜덤으로 섞기
+        // ServerManager 인스턴스가 초기화되었는지 확인
+        if (serverManagerInstance == null)
+        {
+            Debug.LogError("ServerManager 인스턴스가 null입니다. 플레이어를 할당할 수 없습니다.");
+            return;
+        }
+
+        // ServerManager의 PlayerManager 배열 초기화
+        serverManagerInstance.PlayerManagers = new PlayerManager[roomSlots.Count];
+
+        // 플레이어 인덱스 섞기
         var indices = Enumerable.Range(0, roomSlots.Count).ToList();
         using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
         {
@@ -68,27 +79,34 @@ public class CustomNetworkRoomManager : NetworkRoomManager
             }
         }
 
-        int i = 0; // 인덱스 할당용
+        int i = 0; // 인덱스 할당용 카운터
         foreach (var roomSlot in roomSlots)
         {
             if (roomSlot == null)
             {
-                Debug.LogWarning("A room slot is null. Skipping this slot.");
+                Debug.LogWarning("룸 슬롯 중 하나가 null입니다. 이 슬롯을 건너뜁니다.");
                 continue;
             }
 
-            var roomPlayer = roomSlot.GetComponent<PlayerManager>();
-            if (roomPlayer != null)
+            var playerManager = roomSlot.GetComponent<PlayerManager>();
+            if (playerManager != null)
             {
-                roomPlayer.PlayerIndex = indices[i];
-                roomPlayer.PlayerName = $"Player {indices[i] + 1}";
-                Debug.Log($"Assigned PlayerIndex: {roomPlayer.PlayerIndex}, PlayerName: {roomPlayer.PlayerName}");
+                playerManager.PlayerIndex = indices[i];
+                playerManager.PlayerName = $"Player {indices[i] + 1}";
+
+                // ServerManager 배열에 PlayerManager 할당
+                serverManagerInstance.PlayerManagers[playerManager.PlayerIndex] = playerManager;
+
+                // PlayerManager에 ServerManager 연결
+                playerManager.ServerManager = serverManagerInstance;
+
+                Debug.Log($"PlayerIndex: {playerManager.PlayerIndex}, PlayerName: {playerManager.PlayerName} 할당 완료");
                 i++;
-                Debug.Log($"Connect Player:{roomPlayer.PlayerName} and ServerManager here");
+                Debug.Log($"Connect Player:{playerManager.PlayerName} and ServerManager here");
             }
             else
             {
-                Debug.LogWarning($"RoomSlot {roomSlot.name} does not have a PlayerManager component. Adding one now.");
+                Debug.LogWarning($"RoomSlot {roomSlot.name}에 PlayerManager 컴포넌트가 없습니다. 새로 추가합니다.");
                 roomSlot.gameObject.AddComponent<PlayerManager>();
             }
         }

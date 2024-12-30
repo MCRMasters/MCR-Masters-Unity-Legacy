@@ -4,52 +4,14 @@ using System.Security.Cryptography;
 using UnityEngine;
 using Mirror;
 using System.Linq;
+using Game.Shared;
 
-
-public static class TileDictionary
-{
-    public static readonly Dictionary<int, string> TileToString = new Dictionary<int, string>();
-    public static readonly Dictionary<string, int> StringToTile = new Dictionary<string, int>();
-
-    static TileDictionary()
-    {
-        for (int i = 0; i < 34; i++)
-        {
-            string tileName = TileNumToString(i);
-            TileToString[i] = tileName;
-            StringToTile[tileName] = i;
-        }
-        TileToString[34] = "0f";
-        StringToTile["0f"] = 34;
-        foreach(int tile in TileToString.Keys)
-        {
-            Debug.Log(tile + " " + TileToString[tile]);
-        }
-    }
-
-    private static string TileNumToString(int tileNum)
-    {
-        string tileName = "";
-        if (tileNum >= 0 && tileNum < 34)
-        {
-            tileName += (char)('1' + tileNum % 9);
-            if (tileNum < 9) tileName += "m";
-            else if (tileNum < 18) tileName += "p";
-            else if (tileNum < 27) tileName += "s";
-            else tileName += "z";
-        }
-        else if (tileNum == 34)
-        {
-            tileName = "0f";
-        }
-        return tileName;
-    }
-}
 public class ServerManager : NetworkBehaviour
 {
     private static List<int> tileDeck = new List<int>();
     private static int currentIndex = 0;
     private const int TotalTiles = 144;
+    public PlayerManager[] PlayerManagers;
 
     [SyncVar]
     public int CurrentRound = -1;
@@ -184,7 +146,7 @@ public class ServerManager : NetworkBehaviour
         // Assign first turn to the player with SeatWind = EAST
         var firstPlayer = NetworkServer.connections.Values
             .Select(conn => conn.identity.GetComponent<PlayerManager>())
-            .FirstOrDefault(player => player != null && player.SeatWind == (int)PlayerManager.Wind.EAST);
+            .FirstOrDefault(player => player != null && player.SeatWind == (int)Wind.EAST);
 
         if (firstPlayer != null)
         {
