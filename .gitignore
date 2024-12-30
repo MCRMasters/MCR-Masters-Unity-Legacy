@@ -78,3 +78,5 @@ Library/
 # Unity Temp folder
 Temp/
 
+# Ignore .vscode folder
+.vscode/
