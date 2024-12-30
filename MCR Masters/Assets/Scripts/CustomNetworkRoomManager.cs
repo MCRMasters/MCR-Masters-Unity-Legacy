@@ -1,17 +1,17 @@
 using Mirror;
 using System;
-using System.Linq; // LINQ ¸Ş¼­µå¸¦ À§ÇØ Ãß°¡
-using System.Collections.Generic; // ¸®½ºÆ® »ç¿ë
-using UnityEngine; // Debug Å¬·¡½º »ç¿ë
-using System.Security.Cryptography; // RandomNumberGenerator »ç¿ë
+using System.Linq;
+using System.Collections.Generic;
+using UnityEngine;
+using System.Security.Cryptography;
 
 public class CustomNetworkRoomManager : NetworkRoomManager
 {
-    public int RequiredPlayerCount = 4; // ÇÃ·¹ÀÌ¾î ¼ö¸¦ Á¶Á¤ °¡´ÉÇÑ º¯¼ö·Î ¼³Á¤
-
+    public int RequiredPlayerCount = 4; // í”Œë ˆì´ì–´ ìˆ˜ë¥¼ ì¡°ì • ê°€ëŠ¥í•œ ë³€ìˆ˜ë¡œ ì„¤ì •
+    private ServerManager serverManagerInstance;
     public override void OnRoomServerPlayersReady()
     {
-        // ¸ğµç ÇÃ·¹ÀÌ¾î°¡ ÁØºñ »óÅÂÀÎÁö È®ÀÎ
+        // ëª¨ë“  í”Œë ˆì´ì–´ê°€ ì¤€ë¹„ ìƒíƒœì¸ì§€ í™•ì¸
         if (roomSlots.Count == RequiredPlayerCount && roomSlots.All(player => player.readyToBegin))
         {
             Debug.Log("All players are ready. Starting the game...");
@@ -22,6 +22,12 @@ public class CustomNetworkRoomManager : NetworkRoomManager
     public override void OnServerAddPlayer(NetworkConnectionToClient conn)
     {
         base.OnServerAddPlayer(conn);
+        var roomPlayer = conn.identity.GetComponent<CustomNetworkRoomPlayer>();
+        if (roomPlayer != null && roomPlayer.GetComponent<PlayerManager>() == null)
+        {
+            roomPlayer.gameObject.AddComponent<PlayerManager>();
+            Debug.Log("PlayerManager component added to RoomPlayer.");
+        }
         Debug.Log($"Player connected: {conn.connectionId}. Total players: {roomSlots.Count}");
     }
 
@@ -39,19 +45,17 @@ public class CustomNetworkRoomManager : NetworkRoomManager
             return;
         }
 
-        base.OnRoomServerSceneChanged(sceneName);
+        // ServerManager ìƒì„±
+        var serverManagerGameObject = new GameObject("ServerManager");
+        serverManagerInstance = serverManagerGameObject.AddComponent<ServerManager>();
 
-        // °ÔÀÓ ÇÃ·¹ÀÌ ¾ÀÀ¸·Î ÀüÈ¯µÈ ÈÄ ÇÃ·¹ÀÌ¾î ÀÎµ¦½º¿Í ÀÌ¸§ ÇÒ´ç
-        if (sceneName == GameplayScene)
-        {
-            Debug.Log("Assigning player indices and names...");
-            AssignPlayerIndicesAndNames();
-        }
+        // í”Œë ˆì´ì–´ ì¸ë±ìŠ¤ì™€ ì´ë¦„ í• ë‹¹
+        AssignPlayerIndicesAndNames(serverManagerGameObject);
     }
 
-    private void AssignPlayerIndicesAndNames()
+    private void AssignPlayerIndicesAndNames(GameObject serverManagerGameObject)
     {
-        // ÇÃ·¹ÀÌ¾î ÀÎµ¦½º¸¦ ·£´ıÀ¸·Î ¼¯±â
+        // í”Œë ˆì´ì–´ ì¸ë±ìŠ¤ë¥¼ ëœë¤ìœ¼ë¡œ ì„ê¸°
         var indices = Enumerable.Range(0, roomSlots.Count).ToList();
         using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
         {
@@ -64,7 +68,7 @@ public class CustomNetworkRoomManager : NetworkRoomManager
             }
         }
 
-        int i = 0; // ÀÎµ¦½º ÇÒ´ç¿ë
+        int i = 0; // ì¸ë±ìŠ¤ í• ë‹¹ìš©
         foreach (var roomSlot in roomSlots)
         {
             if (roomSlot == null)
@@ -80,10 +84,12 @@ public class CustomNetworkRoomManager : NetworkRoomManager
                 roomPlayer.PlayerName = $"Player {indices[i] + 1}";
                 Debug.Log($"Assigned PlayerIndex: {roomPlayer.PlayerIndex}, PlayerName: {roomPlayer.PlayerName}");
                 i++;
+                Debug.Log($"Connect Player:{roomPlayer.PlayerName} and ServerManager here");
             }
             else
             {
-                Debug.LogWarning("PlayerManager component not found on RoomPlayer. Ensure all slots have the correct components.");
+                Debug.LogWarning($"RoomSlot {roomSlot.name} does not have a PlayerManager component. Adding one now.");
+                roomSlot.gameObject.AddComponent<PlayerManager>();
             }
         }
     }

@@ -3,13 +3,14 @@ using UnityEngine;
 
 public class CustomNetworkRoomPlayer : NetworkRoomPlayer
 {
-    // »õ·Î¿î ¸Ş¼­µå: ±âÁ¸ CmdChangeReadyState¸¦ È°¿ëÇÏ°í Ä¿½ºÅÒ ·ÎÁ÷ Ãß°¡
+    // ìƒˆë¡œìš´ ë©”ì„œë“œ: ê¸°ì¡´ CmdChangeReadyStateë¥¼ í™œìš©í•˜ê³  ì»¤ìŠ¤í…€ ë¡œì§ ì¶”ê°€
+    [Command]
     public void ChangeReadyState(bool ready)
     {
-        // ±âº» CmdChangeReadyState È£Ãâ
+        // ê¸°ë³¸ CmdChangeReadyState í˜¸ì¶œ
         CmdChangeReadyState(ready);
 
-        // Ãß°¡ µ¿ÀÛ
+        // ì¶”ê°€ ë™ì‘
         Debug.Log($"Custom logic: Player {index} is now {(ready ? "ready" : "not ready")}.");
     }
 

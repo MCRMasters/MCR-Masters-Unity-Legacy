@@ -5,6 +5,46 @@ using UnityEngine;
 using Mirror;
 using System.Linq;
 
+
+public static class TileDictionary
+{
+    public static readonly Dictionary<int, string> TileToString = new Dictionary<int, string>();
+    public static readonly Dictionary<string, int> StringToTile = new Dictionary<string, int>();
+
+    static TileDictionary()
+    {
+        for (int i = 0; i < 34; i++)
+        {
+            string tileName = TileNumToString(i);
+            TileToString[i] = tileName;
+            StringToTile[tileName] = i;
+        }
+        TileToString[34] = "0f";
+        StringToTile["0f"] = 34;
+        foreach(int tile in TileToString.Keys)
+        {
+            Debug.Log(tile + " " + TileToString[tile]);
+        }
+    }
+
+    private static string TileNumToString(int tileNum)
+    {
+        string tileName = "";
+        if (tileNum >= 0 && tileNum < 34)
+        {
+            tileName += (char)('1' + tileNum % 9);
+            if (tileNum < 9) tileName += "m";
+            else if (tileNum < 18) tileName += "p";
+            else if (tileNum < 27) tileName += "s";
+            else tileName += "z";
+        }
+        else if (tileNum == 34)
+        {
+            tileName = "0f";
+        }
+        return tileName;
+    }
+}
 public class ServerManager : NetworkBehaviour
 {
     private static List<int> tileDeck = new List<int>();
@@ -17,9 +57,18 @@ public class ServerManager : NetworkBehaviour
     public override void OnStartServer()
     {
         base.OnStartServer();
-        Debug.Log("Server started. Ready for the first round initialization.");
+        // test code for dict
+        Debug.Log("In OnStartServer function.");
+        // seems this function didn't excute
+
     }
 
+    public void Start()
+    {
+        Debug.Log("Server started. Ready for the first round initialization.");
+        // test code for dict
+        //Debug.Log(TileDictionary.TileToString.ContainsKey(0));
+    }
     public void StartNewRound()
     {
         CurrentRound++;

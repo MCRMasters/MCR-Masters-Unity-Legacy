@@ -5,19 +5,19 @@ using TMPro;
 
 public class LobbyUI : MonoBehaviour
 {
-    public Button readyButton; // ButtonÀ» Inspector¿¡¼­ ¿¬°áÇÏÁö ¾Ê¾Æµµ µË´Ï´Ù.
+    public Button readyButton; // Buttonì„ Inspectorì—ì„œ ì—°ê²°í•˜ì§€ ì•Šì•„ë„ ë©ë‹ˆë‹¤.
     private CustomNetworkRoomPlayer roomPlayer;
 
     void Start()
     {
-        // ¼­¹ö¿¡¼­ ½ÇÇà ½Ã ·ÎÁ÷ ¹«½Ã
+        // ì„œë²„ì—ì„œ ì‹¤í–‰ ì‹œ ë¡œì§ ë¬´ì‹œ
         if (!NetworkClient.active)
         {
             Debug.LogWarning("LobbyUI: This script is intended to run on the client.");
             return;
         }
 
-        // ·ÎÄÃ ÇÃ·¹ÀÌ¾î °¡Á®¿À±â
+        // ë¡œì»¬ í”Œë ˆì´ì–´ ê°€ì ¸ì˜¤ê¸°
         var networkIdentity = NetworkClient.connection.identity;
         roomPlayer = networkIdentity?.GetComponent<CustomNetworkRoomPlayer>();
         if (roomPlayer == null)
@@ -26,7 +26,7 @@ public class LobbyUI : MonoBehaviour
             return;
         }
 
-        // ReadyButton µ¿Àû Ã£±â
+        // ReadyButton ë™ì  ì°¾ê¸°
         readyButton = GameObject.Find("ReadyButton")?.GetComponent<Button>();
         if (readyButton == null)
         {
@@ -34,10 +34,10 @@ public class LobbyUI : MonoBehaviour
             return;
         }
 
-        // ¹öÆ° Å¬¸¯ ÀÌº¥Æ® Ãß°¡
+        // ë²„íŠ¼ í´ë¦­ ì´ë²¤íŠ¸ ì¶”ê°€
         readyButton.onClick.AddListener(OnReadyButtonClicked);
 
-        // ÃÊ±â ¹öÆ° »óÅÂ ¼³Á¤
+        // ì´ˆê¸° ë²„íŠ¼ ìƒíƒœ ì„¤ì •
         UpdateButtonUI(false);
     }
 
@@ -45,11 +45,11 @@ public class LobbyUI : MonoBehaviour
     {
         if (roomPlayer != null)
         {
-            // ÇöÀç »óÅÂÀÇ ¹İ´ë·Î ¼³Á¤
+            // í˜„ì¬ ìƒíƒœì˜ ë°˜ëŒ€ë¡œ ì„¤ì •
             bool newReadyState = !roomPlayer.readyToBegin;
             roomPlayer.CmdChangeReadyState(newReadyState);
 
-            // UI ¾÷µ¥ÀÌÆ®
+            // UI ì—…ë°ì´íŠ¸
             UpdateButtonUI(newReadyState);
         }
     }
