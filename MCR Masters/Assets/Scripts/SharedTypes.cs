@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 
 namespace Game.Shared
 {
@@ -91,7 +93,8 @@ namespace Game.Shared
         EAST = 27,
         SOUTH = 28,
         WEST = 29,
-        NORTH = 30
+        NORTH = 30,
+        END = 31
     }
 
     public enum TileType
@@ -155,14 +158,116 @@ namespace Game.Shared
 
     public class Hand
     {
-        public List<int> ClosedTiles = new List<int>();
-        public List<int> OpenedTiles = new List<int>();
-        public List<Block> CallBlocks = new List<Block>();
-        public int FlowerPoint;
-        public int WinningTile;
-        public bool IsBlocksDivided;
-        public List<KeyValuePair<int, int>> YakuScoreList = new List<KeyValuePair<int, int>>();
-        public int HighestScore;
-        public List<int> KeishikiTenpaiTiles = new List<int>();
+        public List<int> ClosedTiles { get; private set; }
+        public List<int> OpenedTiles { get; private set; }
+        public List<Block> CallBlocks { get; private set; }
+        public int FlowerPoint { get; set; }
+        public int WinningTile { get; set; }
+        public List<KeyValuePair<int, int>> YakuScoreList { get; private set; }
+        public int HighestScore { get; set; }
+        public List<int> KeishikiTenpaiTiles { get; private set; }
+        private int TilesLeftToDraw { get; set; }
+        public Hand()
+        {
+            Initialize();
+        }
+
+        private bool TileOutOfRange(int tile)
+        {
+            return tile < 0 || tile >= 35;
+        }
+        private void Initialize()
+        {
+            ClosedTiles = new List<int>(new int[35]); // 초기값 0으로 35개 생성
+            OpenedTiles = new List<int>(new int[35]); // 초기값 0으로 35개 생성
+            CallBlocks = new List<Block>();
+            YakuScoreList = new List<KeyValuePair<int, int>>();
+            KeishikiTenpaiTiles = new List<int>();
+            FlowerPoint = 0;
+            WinningTile = -1;
+            HighestScore = 0;
+            TilesLeftToDraw = 14;
+        }
+
+        public int DrawFirstHand(List<int> hand)
+        {
+            Debug.Log($"[DrawFirstHand] Attempting to draw hand: {string.Join(", ", hand.Select(t => TileDictionary.NumToString[t]))}");
+
+            if (hand == null || hand.Count != 13 || TilesLeftToDraw != 14)
+            {
+                Debug.LogError("[DrawFirstHand] Invalid hand or incorrect draw state.");
+                return -1;
+            }
+            for (int i = 0; i < hand.Count; i++)
+            {
+                if (TileOutOfRange(hand[i]))
+                {
+                    Debug.LogError($"[DrawFirstHand] Tile {hand[i]} is out of range.");
+                    return -1;
+                }
+                ClosedTiles[hand[i]] += 1;
+                TilesLeftToDraw -= 1;
+            }
+
+            Debug.Log("[DrawFirstHand] Successfully drew first hand.");
+            PrintHand();
+            PrintHandNames();
+            return 0;
+        }
+
+        public int DiscardOneTile(int tile)
+        {
+            Debug.Log($"[DiscardOneTile] Attempting to discard tile: {TileDictionary.NumToString[tile]}");
+
+            if (TilesLeftToDraw != 0 || TileOutOfRange(tile) || ClosedTiles[tile] <= 0)
+            {
+                Debug.LogError("[DiscardOneTile] Invalid discard operation.");
+                return -1;
+            }
+            ClosedTiles[tile] -= 1;
+            TilesLeftToDraw += 1;
+            WinningTile = -1;
+
+            Debug.Log("[DiscardOneTile] Successfully discarded tile.");
+            PrintHand();
+            PrintHandNames();
+            return 0;
+        }
+
+        public int TsumoOneTile(int tile)
+        {
+            Debug.Log($"[TsumoOneTile] Attempting to tsumo tile: {TileDictionary.NumToString[tile]}");
+
+            if (TilesLeftToDraw != 1 || TileOutOfRange(tile))
+            {
+                Debug.LogError("[TsumoOneTile] Invalid tsumo operation.");
+                return -1;
+            }
+            ClosedTiles[tile] += 1;
+            TilesLeftToDraw -= 1;
+            WinningTile = tile;
+
+            Debug.Log("[TsumoOneTile] Successfully tsumoed tile.");
+            PrintHand();
+            PrintHandNames();
+            return 0;
+        }
+
+        private void PrintHand()
+        {
+            var closedTilesOutput = string.Join(" ", ClosedTiles.Select((value, index) => index % 9 == 0 && index != 0 ? $"\n{value}" : value.ToString()));
+            var openedTilesOutput = string.Join(" ", OpenedTiles.Select((value, index) => index % 9 == 0 && index != 0 ? $"\n{value}" : value.ToString()));
+            Debug.Log($"[PrintHand] Closed Tiles:\n{closedTilesOutput}\n[PrintHand] Opened Tiles:\n{openedTilesOutput}\nFlower Points: {FlowerPoint}");
+        }
+
+        private void PrintHandNames()
+        {
+            var closedTilesNames = string.Join(" ", ClosedTiles.SelectMany((value, index) => Enumerable.Repeat(TileDictionary.NumToString[index], value)));
+            var openedTilesNames = string.Join(" ", OpenedTiles.SelectMany((value, index) => Enumerable.Repeat(TileDictionary.NumToString[index], value)));
+            var winningTileName = WinningTile >= 0 && WinningTile < TileDictionary.NumToString.Count ? TileDictionary.NumToString[WinningTile] : "None";
+
+            Debug.Log($"[PrintHandNames] Closed Tiles: {closedTilesNames}\n[PrintHandNames] Opened Tiles: {openedTilesNames}\nFlower Points: {FlowerPoint}\nWinning Tile: {winningTileName}");
+        }
+
     }
 }

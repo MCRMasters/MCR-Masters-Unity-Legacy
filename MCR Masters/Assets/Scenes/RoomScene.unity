@@ -278,12 +278,12 @@ PrefabInstance:
       objectReference: {fileID: 2842649186694865054, guid: 299910e50e6a1c340b2b285f89176988, type: 3}
     - target: {fileID: 6996135421176964798, guid: 0d7f6249495baad43b9ece29556b6467, type: 3}
       propertyPath: spawnPrefabs.Array.size
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6996135421176964798, guid: 0d7f6249495baad43b9ece29556b6467, type: 3}
       propertyPath: 'spawnPrefabs.Array.data[3]'
       value: 
-      objectReference: {fileID: 2842649186694865054, guid: 299910e50e6a1c340b2b285f89176988, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 7148554449997493305, guid: 0d7f6249495baad43b9ece29556b6467, type: 3}
       propertyPath: m_Name
       value: RoomManager

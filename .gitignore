@@ -83,3 +83,7 @@ Temp/
 
 # Ignore clones for ParrelSync
 MCR Masters_clone_*/
+
+# Ignore VS config file
+MCR Masters/.editorconfig
+MCR Masters/.vsconfig

@@ -9,29 +9,119 @@ using Game.Shared;
 
 public class ServerManager : NetworkBehaviour
 {
-    private static List<int> tileDeck = new List<int>();
-    private static int currentIndex = 0;
+    private List<int> tileDeck = new();
+    
+    private Hand[] handList;
+    private List<int>[] kawaTilesList;
+
     private const int TotalTiles = 144;
-    public PlayerManager[] PlayerManagers;
-    private HashSet<int> completedPlayers = new HashSet<int>();
+    private int tileDrawIndexLeft = 0;
+    private int tileDrawIndexRight = TotalTiles - 1;
 
-    [SyncVar]
-    public int CurrentRound = -1;
+    private int activePlayerCount = 0;
+    private PlayerManager[] PlayerManagers;
+    private const int MaxPlayers = 4;
 
-    [SyncVar]
-    public Wind RoundWind = Wind.EAST;
-
-    [SyncVar]
-    public int RoundCount = -1;
-
+    
+    private int CurrentRound = 0;
+    private Wind RoundWind = Wind.EAST;
     private bool gameStarted = false;
 
-    void Awake()
+
+    void Start()
     {
-        DontDestroyOnLoad(this.gameObject);
+        // ÏïàÏ†ÑÏû•Ïπò: ÏÑúÎ≤ÑÏóêÏÑúÎßå Ïã§ÌñâÎêòÎèÑÎ°ù ÌôïÏù∏
+        if (!NetworkServer.active)
+        {
+            Debug.LogWarning("ServerManager is not running on the server. Destroying this object.");
+            Destroy(gameObject); // ÌÅ¥ÎùºÏù¥Ïñ∏Ìä∏ÏóêÏÑú ÏÉùÏÑ±Îêú Í≤ΩÏö∞ Ï†úÍ±∞
+            return;
+        }
+
+        Debug.Log("ServerManager starting...");
+
+        
     }
 
-    [Server]
+    bool CanDrawTile()
+    {
+        return tileDrawIndexLeft <= tileDrawIndexRight;
+    }
+
+
+    public void IncrementPlayerCount()
+    {
+        activePlayerCount++;
+        Debug.Log($"Player connected. ActivePlayerCount: {activePlayerCount}");
+
+        if (activePlayerCount == MaxPlayers)
+        {
+            Debug.Log($"All {MaxPlayers} players are active. Initializing players...");
+            InitializePlayers();
+        }
+    }
+
+    public void DecrementPlayerCount()
+    {
+        activePlayerCount--;
+        Debug.Log($"Player disconnected. ActivePlayerCount: {activePlayerCount}");
+    }
+
+    public void InitializePlayers()
+    {
+        Debug.Log("ServerManager initialize players...");
+        // Ïî¨ÏóêÏÑú PlayerManagerÎ•º Ï∞æÏùå
+        PlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (PlayerManagers.Length != MaxPlayers)
+        {
+            Debug.LogError($"Expected {MaxPlayers} PlayerManagers, but found {PlayerManagers.Length}. Game cannot proceed.");
+            return;
+        }
+
+        AssignPlayerIndicesAndNames();
+        GameStarted();
+    }
+
+    private void AssignPlayerIndicesAndNames()
+    {
+        // ÌîåÎ†àÏù¥Ïñ¥ Ïù∏Îç±Ïä§Î•º ÏÑûÍ∏∞
+        var indices = Enumerable.Range(0, PlayerManagers.Length).ToList();
+        using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+        {
+            for (int n = indices.Count - 1; n > 0; n--)
+            {
+                byte[] box = new byte[4];
+                rng.GetBytes(box);
+                int k = BitConverter.ToInt32(box, 0) & int.MaxValue % (n + 1);
+                (indices[n], indices[k]) = (indices[k], indices[n]);
+            }
+        }
+
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            if (PlayerManagers[i] != null)
+            {
+                PlayerManagers[i].PlayerIndex = indices[i];
+                PlayerManagers[i].PlayerName = $"Player {indices[i] + 1}";
+
+                Debug.Log($"PlayerIndex: {PlayerManagers[i].PlayerIndex}, PlayerName: {PlayerManagers[i].PlayerName} Ìï†Îãπ ÏôÑÎ£å");
+            }
+            else
+            {
+                Debug.LogWarning($"PlayerManagers[{i}]Í∞Ä nullÏûÖÎãàÎã§. Í±¥ÎÑàÎúÅÎãàÎã§.");
+            }
+        }
+        // ÎîîÎ≤ÑÍπÖÏö© Ï∂úÎ†•
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            if (PlayerManagers[i] != null)
+            {
+                Debug.Log($"PlayerManagers[{i}] - PlayerName: {PlayerManagers[i].PlayerName}, PlayerIndex: {PlayerManagers[i].PlayerIndex}");
+            }
+        }
+    }
+
     public void GameStarted()
     {
         if (gameStarted)
@@ -44,238 +134,152 @@ public class ServerManager : NetworkBehaviour
 
         Debug.Log("Game started. Ready for the first round initialization.");
         Debug.Log($"PlayerManagers count: {PlayerManagers?.Length}");
-        for (int i = 0; i < PlayerManagers.Length; i++)
-        {
-            Debug.Log($"PlayerManger name: {PlayerManagers[i].PlayerName}");
-        }
+
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
             if (PlayerManagers[i] == null)
             {
                 Debug.LogError($"PlayerManager at index {i} is null.");
+                continue;
             }
-            else if (PlayerManagers[i].PlayerStatus == null)
-            {
-                Debug.LogError($"PlayerManager {PlayerManagers[i].PlayerName} player index {PlayerManagers[i].PlayerIndex} at array index {i} has null PlayerStatus.");
-            }
-        }
 
-        completedPlayers.Clear();
-        for (int i = 0; i < PlayerManagers.Length; i++)
-        {
-            if(PlayerManagers[i] != null)
-            {
-                var networkIdentity = PlayerManagers[i].GetComponent<NetworkIdentity>();
-                Debug.Log(networkIdentity.ToString() +  networkIdentity.connectionToClient.ToString() + i.ToString());
-                if(networkIdentity == null || networkIdentity.connectionToClient == null)
-                {
-                    Debug.LogWarning($"PlayerManager[{i}] does not have a valid connection or NetworkIdentity.");
-                }
-                else
-                {
-                    //TargetInitializePlayer(networkIdentity.connectionToClient, i);
-                }
-            }
+            // PlayerManagerÏóêÍ≤å Ï†ïÎ≥¥Î•º Ï†ÑÎã¨
+            Debug.Log($"Passing initialization data to PlayerManager[{i}].");
+            PlayerManagers[i].InitializePlayerOnClient(i, Wind.EAST + i, RoundWind);
         }
-    }
-
-    [TargetRpc]
-    public void TargetInitializePlayer(NetworkConnection target, int playerIndex)
-    {
-        return;
-        // ≈¨∂Û¿Ãæ∆Æø°º≠ √ ±‚»≠ ¿€æ˜ ºˆ«‡
-        Debug.Log($"TargetInitializePlayer called for player index: {playerIndex}");
-        
-        if (target.identity != null)
-        {
-            var playerManager = target.identity.GetComponent<PlayerManager>();
-            if (playerManager != null)
-            {
-                // PlayerManager∏¶ ≈Î«ÿ PlayerStatus √ ±‚»≠
-                playerManager.PlayerStatus = new PlayerStatus
-                {
-                    CurrentScore = 0,
-                    SeatWind = (Wind)((int)Wind.EAST + playerIndex), // ºˆ¡§µ» SeatWind √ ±‚»≠
-                    RoundWind = Wind.EAST,
-                    IsPlayerTurn = playerIndex == 0 // øπΩ√: index 0¿Œ «√∑π¿ÃæÓ∞° √π π¯¬∞ ≈œ
-                };
-
-                Debug.Log($"PlayerManager for index {playerIndex} initialized on client. SeatWind: {playerManager.PlayerStatus.SeatWind}");
-            }
-            else
-            {
-                Debug.LogError("PlayerManager component not found on the NetworkIdentity.");
-            }
-        }
-        else
-        {
-            Debug.LogError("NetworkIdentity for the connection is null.");
-        }
-
-        // º≠πˆø° øœ∑· ªÛ≈¬ æÀ∏Æ±‚
-        CmdNotifyInitializationComplete(playerIndex);
+        StartNewRounds();
     }
 
 
 
-    [Command]
-    public void CmdNotifyInitializationComplete(int playerIndex)
-    {
-        Debug.Log($"Player {playerIndex} initialization complete on server.");
-        MarkInitializationComplete(playerIndex);
-    }
-
-    public void MarkInitializationComplete(int playerIndex)
-    {
-        completedPlayers.Add(playerIndex);
-
-        // ∏µÁ «√∑π¿ÃæÓ¿« √ ±‚»≠∞° øœ∑·µ«æ˙¥¬¡ˆ »Æ¿Œ
-        if (completedPlayers.Count == PlayerManagers.Length)
-        {
-            Debug.Log("All players have been initialized. Starting the next step.");
-            StartNewRounds();
-        }
-    }
-
-
-    [Server]
+    
     public void StartNewRounds()
     {
-        for(int i = 0; i < 16; ++i)
+        Debug.Log("Players first seat:");
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            Debug.Log($"Index {i}: Player {PlayerManagers[i].PlayerName} - Wind: {PlayerManagers[i].PlayerStatus.SeatWind}");
+        }
+        for (int i = 0; i < 17; ++i)
         {
             StartNewRound();
         }
     }
 
 
-    [Server]
+    
     public void StartNewRound()
     {
-        if (RoundWind > Wind.NORTH)
+        if(CurrentRound >= 16)
         {
             Debug.Log("Game over. All rounds completed.");
             return;
         }
-
-        RoundCount++;
-
-        if (RoundCount == 4)
+        CurrentRound++;
+        if (CurrentRound > 1 && CurrentRound % 4 == 1)
         {
-            RoundCount = 0;
-            AdjustPositionsAfterRound();
             RoundWind++;
         }
-        else
+        if (CurrentRound > 1)
         {
-            RotatePlayers();
+            AdjustPositionsBeforeRound();
         }
-
-        CurrentRound++;
-
+        Debug.Log($"New round started: Round {CurrentRound}, Wind: {RoundWind}");
         InitializeTiles();
         ShuffleTiles();
         DealTilesToPlayers();
-        UpdatePlayerStates();
+        int currentPlayerIndex = 0;
 
-        Debug.Log($"New round started: Round {CurrentRound}, Wind: {RoundWind}");
+        while (CanDrawTile())
+        {
+            // ÌÉÄÏùº ÎΩëÍ∏∞
+            var drawnTiles = DrawTiles(1);
+            if (drawnTiles == null || drawnTiles.Count == 0)
+            {
+                Debug.LogWarning($"Player {currentPlayerIndex}: No more tiles to draw.");
+                break;
+            }
+
+            // TsumoOneTile Ìò∏Ï∂ú
+            int tile = drawnTiles[0];
+            int tsumoResult = handList[currentPlayerIndex].TsumoOneTile(tile);
+            if (tsumoResult != 0)
+            {
+                Debug.LogError($"Player {currentPlayerIndex}: Failed to tsumo tile {tile}.");
+                continue;
+            }
+
+            Debug.Log($"Player {currentPlayerIndex} tsumoed tile: {TileDictionary.NumToString[tile]}.");
+
+            // WinningTileÏùÑ Ï∞∏Ï°∞ÌïòÏó¨ ÌÉÄÏùº Î≤ÑÎ¶¨Í∏∞
+            int winningTile = handList[currentPlayerIndex].WinningTile;
+            if (winningTile == -1)
+            {
+                Debug.LogError($"Player {currentPlayerIndex}: No WinningTile to discard.");
+                currentPlayerIndex = (currentPlayerIndex + 1) % 4; // Îã§Ïùå ÌîåÎ†àÏù¥Ïñ¥Î°ú Ïù¥Îèô
+                continue;
+            }
+
+            int discardResult = handList[currentPlayerIndex].DiscardOneTile(winningTile);
+            if (discardResult != 0)
+            {
+                Debug.LogError($"Player {currentPlayerIndex}: Failed to discard tile {winningTile}.");
+                currentPlayerIndex = (currentPlayerIndex + 1) % 4; // Îã§Ïùå ÌîåÎ†àÏù¥Ïñ¥Î°ú Ïù¥Îèô
+                continue;
+            }
+
+            // Î≤ÑÎ†§ÏßÑ ÌÉÄÏùºÏùÑ kawaTilesListÏóê Ï∂îÍ∞Ä
+            kawaTilesList[currentPlayerIndex].Add(winningTile);
+            Debug.Log($"Player {currentPlayerIndex} discarded tile: {TileDictionary.NumToString[winningTile]}.");
+
+            // Îã§Ïùå ÌîåÎ†àÏù¥Ïñ¥Î°ú Ïù¥Îèô
+            currentPlayerIndex = (currentPlayerIndex + 1) % 4;
+        }
     }
 
-    private void RotatePlayers()
+
+    private void AdjustPositionsBeforeRound()
     {
-        var seatWinds = PlayerManagers
-    .Where(pm => pm != null && pm.PlayerStatus != null) // null √º≈© √ﬂ∞°
-    .Select(pm => pm.PlayerStatus.SeatWind)
-    .ToList();
-        if (seatWinds.Count != PlayerManagers.Length)
-        {
-            Debug.LogError("Mismatch between seat winds and player managers count.");
-            return;
-        }
-
-        var rotated = new List<Wind>
-        {
-            seatWinds[3], // North becomes East
-            seatWinds[0], // East becomes South
-            seatWinds[1], // South becomes West
-            seatWinds[2]  // West becomes North
-        };
-
+        int[] changeIndex = new int[PlayerManagers.Length];
         PlayerManager[] tempManagers = new PlayerManager[PlayerManagers.Length];
-
-        for (int i = 0; i < PlayerManagers.Length; i++)
+        if (CurrentRound % 4 == 1)
         {
-            PlayerManagers[i].PlayerStatus.SeatWind = rotated[i];
+            if (RoundWind == Wind.SOUTH || RoundWind == Wind.NORTH)
+            {
+                changeIndex[0] = 2;
+                changeIndex[1] = 1;
+                changeIndex[2] = 0;
+                changeIndex[3] = 3;
+            }
+            else if (RoundWind == Wind.WEST)
+            {
+                changeIndex[0] = 0;
+                changeIndex[1] = 3;
+                changeIndex[2] = 1;
+                changeIndex[3] = 2;
+            }
+        }
+        else
+        {
+            changeIndex[0] = 1; 
+            changeIndex[1] = 2; 
+            changeIndex[2] = 3; 
+            changeIndex[3] = 0; 
         }
 
+
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
-            tempManagers[(int)PlayerManagers[i].PlayerStatus.SeatWind - (int)Wind.EAST] = PlayerManagers[i];
+            tempManagers[i] = PlayerManagers[changeIndex[i]];
         }
 
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
             PlayerManagers[i] = tempManagers[i];
         }
-
-        Debug.Log("Players rotated and reassigned.");
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
-            Debug.Log($"Index {i}: Player {PlayerManagers[i].PlayerName} - Wind: {PlayerManagers[i].PlayerStatus.SeatWind}");
-        }
-    }
-
-    private void AdjustPositionsAfterRound()
-    {
-        var seatWinds = PlayerManagers.Select(pm => pm.PlayerStatus.SeatWind).ToList();
-        if (seatWinds.Count != PlayerManagers.Length)
-        {
-            Debug.LogError("Mismatch between seat winds and player managers count.");
-            return;
-        }
-
-        PlayerManager[] tempManagers = new PlayerManager[PlayerManagers.Length];
-
-        if (RoundWind == Wind.EAST || RoundWind == Wind.WEST)
-        {
-            // Swap East and South, West and North
-            var swapped = new List<Wind>
-            {
-                seatWinds[1], // South
-                seatWinds[0], // East
-                seatWinds[3], // North
-                seatWinds[2]  // West
-            };
-
-            for (int i = 0; i < PlayerManagers.Length; i++)
-            {
-                PlayerManagers[i].PlayerStatus.SeatWind = swapped[i];
-            }
-        }
-        else if (RoundWind == Wind.SOUTH)
-        {
-            // Full rotate
-            var rotated = new List<Wind>
-            {
-                seatWinds[2], // West
-                seatWinds[0], // East
-                seatWinds[3], // North
-                seatWinds[1]  // South
-            };
-
-            for (int i = 0; i < PlayerManagers.Length; i++)
-            {
-                PlayerManagers[i].PlayerStatus.SeatWind = rotated[i];
-            }
-        }
-
-        for (int i = 0; i < PlayerManagers.Length; i++)
-        {
-            tempManagers[(int)PlayerManagers[i].PlayerStatus.SeatWind - (int)Wind.EAST] = PlayerManagers[i];
-        }
-
-        for (int i = 0; i < PlayerManagers.Length; i++)
-        {
-            PlayerManagers[i] = tempManagers[i];
+            PlayerManagers[i].PlayerStatus.SeatWind = i + Wind.EAST;
         }
 
         Debug.Log("Player positions adjusted after round and reassigned.");
@@ -288,6 +292,15 @@ public class ServerManager : NetworkBehaviour
     private void InitializeTiles()
     {
         tileDeck.Clear();
+        handList = new Hand[MaxPlayers];
+        kawaTilesList = new List<int>[MaxPlayers];
+        tileDrawIndexLeft = 0;
+        tileDrawIndexRight = TotalTiles - 1;
+        for (int i = 0; i < MaxPlayers; i++)
+        {
+            handList[i] = new Hand();
+            kawaTilesList[i] = new();
+        }        
         for (int tileNum = 0; tileNum < 34; tileNum++)
         {
             for (int i = 0; i < 4; i++)
@@ -324,133 +337,42 @@ public class ServerManager : NetworkBehaviour
         Debug.Log("Tiles shuffled.");
     }
 
-    [Server]
+    
     public List<int> DrawTiles(int count)
     {
-        if (tileDeck.Count - currentIndex < count)
+        if (tileDrawIndexRight - tileDrawIndexLeft + 1 < count)
         {
             Debug.LogWarning("Not enough tiles left in the deck.");
             return null;
         }
 
-        var drawnTiles = tileDeck.GetRange(currentIndex, count);
-        currentIndex += count;
+        var drawnTiles = tileDeck.GetRange(tileDrawIndexLeft, count);
+        tileDrawIndexLeft += count;
         return drawnTiles;
     }
 
-    [Server]
+    
     public void PlayerDiscardTile(PlayerManager playerManager, int tile)
     {
-        //if (!playerManager.PlayerHand.ClosedTiles.Remove(tile))
-        //{
-        //    Debug.LogError("Player " + playerManager.PlayerName + " tried to discard a tile not in their hand: " + tile);
-        //    return;
-        //}
 
-        //playerManager.PlayerKawaTiles.Add(tile);
-        //Debug.Log("Player " + playerManager.PlayerName + " discarded tile: " + tile);
     }
 
-    [Server]
-    public void DealTilesToPlayers()
+    
+    private void DealTilesToPlayers()
     {
-        foreach (var conn in NetworkServer.connections.Values)
+        for (int i = 0; i < MaxPlayers; ++i)
         {
-            if (conn.identity.TryGetComponent<PlayerManager>(out var playerManager))
+            var handTiles = DrawTiles(13);
+            if (handTiles == null)
             {
-                var handTiles = DrawTiles(13);
-                if (handTiles == null)
-                {
-                    Debug.LogError("Not enough tiles to deal to player " + playerManager.PlayerName);
-                    return;
-                }
-                //playerManager.PlayerHand.ClosedTiles.AddRange(handTiles);
-                //playerManager.PlayerHand.ClosedTiles.Sort();
-                Debug.Log("Dealt starting hand to player " + playerManager.PlayerName);
+                Debug.LogError("Not enough tiles to deal to player " + PlayerManagers[i].PlayerName);
+                return;
             }
+            handTiles.Sort();
+            handList[i].DrawFirstHand(handTiles);
+            Debug.Log("Dealt starting hand to player " + PlayerManagers[i].PlayerName);
         }
     }
 
 
-    [Server]
-    private void UpdatePlayerStates()
-    {
-        foreach (var conn in NetworkServer.connections.Values)
-        {
-            if (conn.identity.TryGetComponent<PlayerManager>(out var playerManager))
-            {
-                playerManager.PlayerStatus.IsPlayerTurn = false;
-            }
-        }
-
-        var firstPlayer = NetworkServer.connections.Values
-            .Select(conn => conn.identity.GetComponent<PlayerManager>())
-            .FirstOrDefault(player => player != null && player.PlayerStatus.SeatWind == Wind.EAST);
-
-        if (firstPlayer != null)
-        {
-            firstPlayer.PlayerStatus.IsPlayerTurn = true;
-            Debug.Log("Player " + firstPlayer.PlayerName + " starts the round.");
-        }
-    }
-    [Server]
-    public void CheckWinningCondition(PlayerManager playerManager)
-    {
-        // Example logic for checking a winning condition
-        //if (playerManager.PlayerHand.ClosedTiles.Count == 0)
-        //{
-        //    Debug.Log("Player " + playerManager.PlayerName + " has no tiles left and wins the round!");
-        //}
-    }
-
-    [Server]
-    public void HandleDraw()
-    {
-        Debug.Log("No tiles left to draw. The round ends in a draw.");
-    }
-
-    [Command]
-    public void CmdRequestStartingHand()
-    {
-        if (!isServer) return;
-
-        var playerManager = connectionToClient.identity.GetComponent<PlayerManager>();
-        if (playerManager == null)
-        {
-            Debug.LogError("PlayerManager not found for connection: " + connectionToClient.connectionId);
-            return;
-        }
-
-        DealTilesToPlayers();
-    }
-
-    [Command]
-    public void CmdDiscardTile(int tile)
-    {
-        if (!isServer) return;
-
-        var playerManager = connectionToClient.identity.GetComponent<PlayerManager>();
-        if (playerManager == null)
-        {
-            Debug.LogError("PlayerManager not found for connection: " + connectionToClient.connectionId);
-            return;
-        }
-
-        PlayerDiscardTile(playerManager, tile);
-    }
-
-    [Command]
-    public void CmdEndTurn()
-    {
-        if (!isServer) return;
-
-        var playerManager = connectionToClient.identity.GetComponent<PlayerManager>();
-        if (playerManager == null)
-        {
-            Debug.LogError("PlayerManager not found for connection: " + connectionToClient.connectionId);
-            return;
-        }
-
-        StartNewRound();
-    }
 }
