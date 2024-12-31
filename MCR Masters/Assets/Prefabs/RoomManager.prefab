@@ -52,7 +52,7 @@ MonoBehaviour:
   editorAutoStart: 0
   sendRate: 60
   offlineScene: 
-  onlineScene: 
+  onlineScene: Assets/Scenes/RoomScene.unity
   offlineSceneLoadDelay: 0
   transport: {fileID: 2203482217970152134}
   networkAddress: localhost
@@ -64,9 +64,54 @@ MonoBehaviour:
   autoCreatePlayer: 1
   playerSpawnMethod: 0
   spawnPrefabs:
+  - {fileID: 3917995763717513675, guid: 6ef086d42267c3042b00bbe62acd493e, type: 3}
+  - {fileID: 3917995763717513675, guid: 8fc9217a95a49d54fae76cb865940a29, type: 3}
+  - {fileID: 3917995763717513675, guid: fc49008273350b04b9b1fce92dedebd1, type: 3}
+  - {fileID: 3917995763717513675, guid: b49d4591287fa5047ab7e5db4ef0eb38, type: 3}
+  - {fileID: 3917995763717513675, guid: f69dd5c8d30f9c2449e57ccfff8858d6, type: 3}
+  - {fileID: 3917995763717513675, guid: c363269e24026b94d86335a6f336d47d, type: 3}
+  - {fileID: 3917995763717513675, guid: f58e192e01231f5408eebb8216231a4e, type: 3}
+  - {fileID: 3917995763717513675, guid: 5fff1541366cd4a4ba7a8ed8d2220036, type: 3}
+  - {fileID: 3917995763717513675, guid: 7bc77613ce51ace498c028dfe19b006d, type: 3}
+  - {fileID: 3917995763717513675, guid: 4f5378e4d515f044b91ae1e652080938, type: 3}
+  - {fileID: 3917995763717513675, guid: fcea28fa52413114d9df964757ed4541, type: 3}
+  - {fileID: 3917995763717513675, guid: 3cee77d17ea60fb4cb24dc104bfb780d, type: 3}
+  - {fileID: 3917995763717513675, guid: da7e994775a3b1e4893cfcff3fdb339e, type: 3}
+  - {fileID: 3917995763717513675, guid: 6049b3e9e401ef34ca544ddb84fd521d, type: 3}
+  - {fileID: 3917995763717513675, guid: 5881742c863bc2d4eb132bc91a4cd3bc, type: 3}
+  - {fileID: 3917995763717513675, guid: 741329850b4a9ed4f903ccca1fc9d23c, type: 3}
+  - {fileID: 3917995763717513675, guid: 32443e1f163cb8545ab25ca927cde025, type: 3}
+  - {fileID: 3917995763717513675, guid: 578e05f388c2ff14aa346fd38901d9d1, type: 3}
+  - {fileID: 3917995763717513675, guid: 4023c228383eff5408bbdc38a637a6e6, type: 3}
+  - {fileID: 3917995763717513675, guid: 62faa785c443d7443bfebf5742e294c3, type: 3}
+  - {fileID: 3917995763717513675, guid: 8222a5704e6ba8f489fc5d589f24ebfa, type: 3}
+  - {fileID: 3917995763717513675, guid: d9f186f414bbd444f891d0986d808bbe, type: 3}
+  - {fileID: 3917995763717513675, guid: 82b820e9eb3cfaf4fb88ea532a7e5d64, type: 3}
+  - {fileID: 3917995763717513675, guid: c22e4c88e51d22b41baab3f013f0abcc, type: 3}
+  - {fileID: 3917995763717513675, guid: 874f99da32baaea43ac4700fc7765d81, type: 3}
+  - {fileID: 3917995763717513675, guid: 676d8059166cb1f4d9f7e7f25d68a4e4, type: 3}
+  - {fileID: 3917995763717513675, guid: 0a3070016af9f5046a72918459386996, type: 3}
+  - {fileID: 3917995763717513675, guid: ee6963a0d4f468649bbae787c5280b24, type: 3}
+  - {fileID: 3917995763717513675, guid: 9a3602672bdd15c47be89db454abdb11, type: 3}
+  - {fileID: 3917995763717513675, guid: f0b63df144844e54ea69ad37311af2d6, type: 3}
+  - {fileID: 3917995763717513675, guid: 0e640dc950480dd4dbdced868a2b469d, type: 3}
+  - {fileID: 3917995763717513675, guid: 978af39ef257add4cad64e4e807d3373, type: 3}
+  - {fileID: 3917995763717513675, guid: e048ae5a597d324489093dbb3da3e403, type: 3}
+  - {fileID: 3917995763717513675, guid: 2f9f9fc910d114b489dd2e10ce6bd6d7, type: 3}
+  - {fileID: 3917995763717513675, guid: a84f0f770b7e6ac49b2643772fcce301, type: 3}
+  - {fileID: 3917995763717513675, guid: 92b9ab80f0aded446baef81da77719b2, type: 3}
+  - {fileID: 3407348564209746436, guid: 3308e9e2fbccadb43849be45ae6fa3ce, type: 3}
+  - {fileID: 2230192348483615621, guid: b028b8257f53cd24d974afe5c2296bca, type: 3}
+  - {fileID: 6776934364856047010, guid: fdf3e683113453944bdc0503a4920d2e, type: 3}
+  - {fileID: 5843342082706692570, guid: 69e31b9e4c0557b459a2b60d06a4510a, type: 3}
+  - {fileID: 1521198839410711512, guid: 6d4195b96be738440a69511b77c64824, type: 3}
+  - {fileID: 3039137431739947073, guid: 3d757911ba71478429eb5015139c0731, type: 3}
   - {fileID: 8971503113307534808, guid: 2ebfc1f5a2cf398468b7ae1c839396d0, type: 3}
-  - {fileID: 7717966288764648944, guid: a5588e889d6a6764681a2a20fbc3d1b6, type: 3}
   - {fileID: 3162013992973901556, guid: 6dca4aa8d7cf7ec4b810a982ad5d9803, type: 3}
+  - {fileID: 5499406800908385258, guid: 423064468e22c7640b2bac2f045e2189, type: 3}
+  - {fileID: 3039137431739947073, guid: c6211e9653221f645830f51cdc972d83, type: 3}
+  - {fileID: 7717966288764648944, guid: a5588e889d6a6764681a2a20fbc3d1b6, type: 3}
+  - {fileID: 6105968721964022872, guid: 28b3402a12a630d4db3164f90b05e8c2, type: 3}
   exceptionsDisconnect: 1
   snapshotSettings:
     bufferTimeMultiplier: 2
@@ -90,9 +135,6 @@ MonoBehaviour:
   _allPlayersReady: 0
   clientIndex: 0
   RequiredPlayerCount: 4
-  serverManagerPrefab: {fileID: 0}
-  ipInputField: {fileID: 8192366956451323986, guid: 6469d039173a36242a9395ac1ee7393d, type: 3}
-  connectButton: {fileID: 8632104802985342957, guid: 5db5e6d46cb95464c883b83278755612, type: 3}
 --- !u!114 &2203482217970152134
 MonoBehaviour:
   m_ObjectHideFlags: 0

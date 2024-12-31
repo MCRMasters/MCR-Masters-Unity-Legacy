@@ -140,11 +140,11 @@ namespace Game.Shared
         public bool IsLastTileOfItsKind;
         public bool IsReplacementTile;
         public bool IsRobbingTheKong;
-        public int CountWinningConditions;
+        public int CountWinningTiles;
 
         public WinningCondition() { }
 
-        public WinningCondition(int winningTile, bool isDiscarded, bool isLastTileInTheGame, bool isLastTileOfItsKind, bool isReplacementTile, bool isRobbingTheKong, int countWinningConditions)
+        public WinningCondition(int winningTile, bool isDiscarded, bool isLastTileInTheGame, bool isLastTileOfItsKind, bool isReplacementTile, bool isRobbingTheKong, int countWinningTiles)
         {
             WinningTile = winningTile;
             IsDiscarded = isDiscarded;
@@ -152,7 +152,7 @@ namespace Game.Shared
             IsLastTileOfItsKind = isLastTileOfItsKind;
             IsReplacementTile = isReplacementTile;
             IsRobbingTheKong = isRobbingTheKong;
-            CountWinningConditions = countWinningConditions;
+            CountWinningTiles = countWinningTiles;
         }
     }
 

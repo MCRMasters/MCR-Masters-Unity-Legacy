@@ -30,6 +30,25 @@ public class CustomNetworkRoomManager : NetworkRoomManager
     }
     */
 
+    private List<PlayerManager> playerManagers = new List<PlayerManager>();
+
+    public override void OnServerAddPlayer(NetworkConnectionToClient conn)
+    {
+        // 기본 플레이어 객체 생성
+        base.OnServerAddPlayer(conn);
+
+        // 새로 생성된 플레이어 객체의 PlayerManager를 추출
+        var playerManager = conn.identity.GetComponent<PlayerManager>();
+        if (playerManager != null)
+        {
+            playerManagers.Add(playerManager);
+            Debug.Log($"Player added: ConnectionId = {conn.connectionId}, PlayerName = {playerManager.PlayerName}");
+        }
+        else
+        {
+            Debug.LogWarning($"Player added but no PlayerManager found for ConnectionId = {conn.connectionId}");
+        }
+    }
 
 
     public override void OnRoomServerPlayersReady()
@@ -40,13 +59,6 @@ public class CustomNetworkRoomManager : NetworkRoomManager
             Debug.Log("All players are ready.");
         }
     }
-
-    public override void OnServerAddPlayer(NetworkConnectionToClient conn)
-    {
-        base.OnServerAddPlayer(conn);
-        Debug.Log($"Player connected: {conn.connectionId}. Total players: {roomSlots.Count}");
-    }
-
 
     public override void OnServerDisconnect(NetworkConnectionToClient conn)
     {

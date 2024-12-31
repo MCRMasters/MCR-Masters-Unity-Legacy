@@ -5,14 +5,16 @@ using System.Linq;
 using UnityEngine;
 using Mirror;
 using Game.Shared;
+using System.Collections;
 
 
 public class ServerManager : NetworkBehaviour
 {
     private List<int> tileDeck = new();
-    
-    private Hand[] handList;
-    private List<int>[] kawaTilesList;
+    private const int MaxPlayers = 4;
+
+    private Hand[] handList = new Hand[MaxPlayers];
+    private List<int>[] kawaTilesList = new List<int>[MaxPlayers];
 
     private const int TotalTiles = 144;
     private int tileDrawIndexLeft = 0;
@@ -20,13 +22,18 @@ public class ServerManager : NetworkBehaviour
 
     private int activePlayerCount = 0;
     private PlayerManager[] PlayerManagers;
-    private const int MaxPlayers = 4;
+    private int[] playerIndices;
 
-    
+
     private int CurrentRound = 0;
     private Wind RoundWind = Wind.EAST;
     private bool gameStarted = false;
 
+
+    public int GetActivePlayerCount()
+    {
+        return activePlayerCount;
+    }
 
     void Start()
     {
@@ -43,12 +50,52 @@ public class ServerManager : NetworkBehaviour
         
     }
 
+    private void BroadcastPlayerIndices()
+    {
+        playerIndices = new int[PlayerManagers.Length];
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            if (PlayerManagers[i] != null)
+            {
+                playerIndices[i] = PlayerManagers[i].PlayerIndex;
+            }
+        }
+        // 각 PlayerManager에 RPC 호출
+        
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            var playerManager = PlayerManagers[i]; 
+            if (playerManager == null)
+            {
+                Debug.LogWarning("PlayerManager is null. Skipping...");
+                continue;
+            }
+
+            if (playerManager.connectionToClient == null)
+            {
+                Debug.LogWarning($"PlayerManager for PlayerIndex {playerManager.PlayerIndex} has a null connectionToClient. Skipping...");
+                continue;
+            }
+
+            Debug.Log($"PlayerManager for PlayerIndex {playerManager.PlayerIndex} has a valid connectionToClient: ConnectionId {playerManager.connectionToClient.connectionId}");
+
+            // RPC 호출
+            playerManager.TargetSetEnemyIndexMap(playerManager.connectionToClient, playerIndices, i);
+        }
+    }
+
+
+
     bool CanDrawTile()
     {
         return tileDrawIndexLeft <= tileDrawIndexRight;
     }
 
-
+    private IEnumerator WaitForInitialization()
+    {
+        yield return new WaitForSeconds(0.5f); // 0.5초 대기 (필요 시 조정)
+        InitializePlayers();
+    }
     public void IncrementPlayerCount()
     {
         activePlayerCount++;
@@ -57,7 +104,7 @@ public class ServerManager : NetworkBehaviour
         if (activePlayerCount == MaxPlayers)
         {
             Debug.Log($"All {MaxPlayers} players are active. Initializing players...");
-            InitializePlayers();
+            StartCoroutine(WaitForInitialization());
         }
     }
 
@@ -72,6 +119,22 @@ public class ServerManager : NetworkBehaviour
         Debug.Log("ServerManager initialize players...");
         // 씬에서 PlayerManager를 찾음
         PlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        // Debug: PlayerManagers 배열 상태 출력
+        Debug.Log($"Found {PlayerManagers.Length} PlayerManagers in the scene.");
+
+        // PlayerManagers 배열 검증
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            if (PlayerManagers[i] == null)
+            {
+                Debug.LogWarning($"PlayerManagers[{i}] is null.");
+            }
+            else
+            {
+                Debug.Log($"PlayerManagers[{i}] - PlayerIndex: {PlayerManagers[i].PlayerIndex}, PlayerName: {PlayerManagers[i].PlayerName}");
+            }
+        }
 
         if (PlayerManagers.Length != MaxPlayers)
         {
@@ -145,7 +208,7 @@ public class ServerManager : NetworkBehaviour
 
             // PlayerManager에게 정보를 전달
             Debug.Log($"Passing initialization data to PlayerManager[{i}].");
-            PlayerManagers[i].InitializePlayerOnClient(i, Wind.EAST + i, RoundWind);
+            PlayerManagers[i].InitializePlayerOnClient(Wind.EAST + i, RoundWind);
         }
         StartNewRounds();
     }
@@ -163,6 +226,8 @@ public class ServerManager : NetworkBehaviour
         for (int i = 0; i < 17; ++i)
         {
             StartNewRound();
+            // test debug code for fisrt round
+            return;
         }
     }
 
@@ -184,11 +249,16 @@ public class ServerManager : NetworkBehaviour
         {
             AdjustPositionsBeforeRound();
         }
+        BroadcastPlayerIndices();
+
         Debug.Log($"New round started: Round {CurrentRound}, Wind: {RoundWind}");
         InitializeTiles();
         ShuffleTiles();
         DealTilesToPlayers();
         int currentPlayerIndex = 0;
+
+        // test debug code for fisrt round
+        return;
 
         while (CanDrawTile())
         {
@@ -206,34 +276,42 @@ public class ServerManager : NetworkBehaviour
             if (tsumoResult != 0)
             {
                 Debug.LogError($"Player {currentPlayerIndex}: Failed to tsumo tile {tile}.");
-                continue;
+                return;
             }
+
+            // Tsumo 호출 (TargetPerformTsumo 사용)
+            PlayerManagers[currentPlayerIndex].TargetPerformTsumo(PlayerManagers[currentPlayerIndex].connectionToClient, tile);
+
 
             Debug.Log($"Player {currentPlayerIndex} tsumoed tile: {TileDictionary.NumToString[tile]}.");
 
             // WinningTile을 참조하여 타일 버리기
             int winningTile = handList[currentPlayerIndex].WinningTile;
+
+
             if (winningTile == -1)
             {
                 Debug.LogError($"Player {currentPlayerIndex}: No WinningTile to discard.");
-                currentPlayerIndex = (currentPlayerIndex + 1) % 4; // 다음 플레이어로 이동
-                continue;
+                return;
             }
+
 
             int discardResult = handList[currentPlayerIndex].DiscardOneTile(winningTile);
             if (discardResult != 0)
             {
                 Debug.LogError($"Player {currentPlayerIndex}: Failed to discard tile {winningTile}.");
                 currentPlayerIndex = (currentPlayerIndex + 1) % 4; // 다음 플레이어로 이동
-                continue;
+                return;
             }
 
             // 버려진 타일을 kawaTilesList에 추가
             kawaTilesList[currentPlayerIndex].Add(winningTile);
             Debug.Log($"Player {currentPlayerIndex} discarded tile: {TileDictionary.NumToString[winningTile]}.");
 
+            PlayerManagers[currentPlayerIndex].SetPlayerTurn(false);
             // 다음 플레이어로 이동
             currentPlayerIndex = (currentPlayerIndex + 1) % 4;
+            PlayerManagers[currentPlayerIndex].SetPlayerTurn(true);
         }
     }
 
@@ -281,7 +359,7 @@ public class ServerManager : NetworkBehaviour
         {
             PlayerManagers[i].PlayerStatus.SeatWind = i + Wind.EAST;
         }
-
+        
         Debug.Log("Player positions adjusted after round and reassigned.");
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
@@ -372,7 +450,26 @@ public class ServerManager : NetworkBehaviour
             handList[i].DrawFirstHand(handTiles);
             Debug.Log("Dealt starting hand to player " + PlayerManagers[i].PlayerName);
         }
+
+        SpawnFirstHands();
     }
 
+    private void SpawnFirstHands()
+    {
+        Debug.Log($"{PlayerManagers.Length} Players in SpawnFirstHands function.");
+        for (int i = 0; i < MaxPlayers; ++i)
+        {
+            if (PlayerManagers[i] == null)
+            {
+                Debug.LogWarning($"PlayerManager at index {i} is null. Skipping.");
+                continue;
+            }
 
+            Debug.Log($"PlayerManager at index {i}, Player Name: {PlayerManagers[i].PlayerName}, Player Index: {PlayerManagers[i].PlayerIndex}, try to Spawn First hand...");
+            // 클라이언트에게 타겟팅된 데이터 전송
+            PlayerManagers[i].TargetSpawnFirstHand(PlayerManagers[i].connectionToClient, handList[i].ClosedTiles);
+        }
+
+        Debug.Log("SpawnFirstHands called with TargetRpc on all clients.");
+    }
 }
