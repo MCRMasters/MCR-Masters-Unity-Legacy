@@ -47,7 +47,7 @@ public class ServerManager : NetworkBehaviour
 
         Debug.Log("ServerManager starting...");
 
-        
+
     }
 
     private void BroadcastPlayerIndices()
@@ -61,10 +61,10 @@ public class ServerManager : NetworkBehaviour
             }
         }
         // 각 PlayerManager에 RPC 호출
-        
+
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
-            var playerManager = PlayerManagers[i]; 
+            var playerManager = PlayerManagers[i];
             if (playerManager == null)
             {
                 Debug.LogWarning("PlayerManager is null. Skipping...");
@@ -215,7 +215,7 @@ public class ServerManager : NetworkBehaviour
 
 
 
-    
+
     public void StartNewRounds()
     {
         Debug.Log("Players first seat:");
@@ -232,10 +232,10 @@ public class ServerManager : NetworkBehaviour
     }
 
 
-    
+
     public void StartNewRound()
     {
-        if(CurrentRound >= 16)
+        if (CurrentRound >= 16)
         {
             Debug.Log("Game over. All rounds completed.");
             return;
@@ -339,10 +339,10 @@ public class ServerManager : NetworkBehaviour
         }
         else
         {
-            changeIndex[0] = 1; 
-            changeIndex[1] = 2; 
-            changeIndex[2] = 3; 
-            changeIndex[3] = 0; 
+            changeIndex[0] = 1;
+            changeIndex[1] = 2;
+            changeIndex[2] = 3;
+            changeIndex[3] = 0;
         }
 
 
@@ -359,7 +359,7 @@ public class ServerManager : NetworkBehaviour
         {
             PlayerManagers[i].PlayerStatus.SeatWind = i + Wind.EAST;
         }
-        
+
         Debug.Log("Player positions adjusted after round and reassigned.");
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
@@ -378,7 +378,7 @@ public class ServerManager : NetworkBehaviour
         {
             handList[i] = new Hand();
             kawaTilesList[i] = new();
-        }        
+        }
         for (int tileNum = 0; tileNum < 34; tileNum++)
         {
             for (int i = 0; i < 4; i++)
@@ -415,7 +415,7 @@ public class ServerManager : NetworkBehaviour
         Debug.Log("Tiles shuffled.");
     }
 
-    
+
     public List<int> DrawTiles(int count)
     {
         if (tileDrawIndexRight - tileDrawIndexLeft + 1 < count)
@@ -429,13 +429,13 @@ public class ServerManager : NetworkBehaviour
         return drawnTiles;
     }
 
-    
+
     public void PlayerDiscardTile(PlayerManager playerManager, int tile)
     {
 
     }
 
-    
+
     private void DealTilesToPlayers()
     {
         for (int i = 0; i < MaxPlayers; ++i)

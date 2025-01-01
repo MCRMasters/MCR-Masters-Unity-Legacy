@@ -24,7 +24,7 @@ public class PlayerManager : NetworkBehaviour
     private List<int>[] EnemyKawaTiles = new List<int>[3];
     private int[] EnemyIndexMap = new int[3];
 
-    
+
 
     private static ServerManager serverManager;
 
@@ -104,7 +104,7 @@ public class PlayerManager : NetworkBehaviour
 
         for (int tileId = 0; tileId < closedTiles.Count; tileId++)
         {
-            for(int tileCount = 0; tileCount < closedTiles[tileId]; tileCount++)
+            for (int tileCount = 0; tileCount < closedTiles[tileId]; tileCount++)
             {
                 // 타일을 스폰하고 UI에 추가하는 로직
                 GameObject tilePrefab = TilePrefabArray[tileId];

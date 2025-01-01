@@ -159,7 +159,3 @@ MonoBehaviour:
   Canvas: {fileID: 0}
   PlayerHaipai: {fileID: 0}
   playerManager: {fileID: 0}
-  TilePrefabArray: []
-  EnemyKawaShimo: {fileID: 0}
-  EnemyKawaKami: {fileID: 0}
-  EnemyKawaToi: {fileID: 0}
