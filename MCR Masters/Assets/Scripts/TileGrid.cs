@@ -3,6 +3,8 @@ using System.Linq;
 using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
+using static UnityEngine.Rendering.DebugUI.Table;
+using System.Collections;
 
 public class TileGrid : MonoBehaviour
 {
@@ -158,7 +160,6 @@ public class TileGrid : MonoBehaviour
             if (rectTransform != null)
             {
                 rectTransform.sizeDelta = new Vector2(cellWidth, cellHeight);
-
             }
             else
             {
@@ -221,22 +222,94 @@ public class TileGrid : MonoBehaviour
         Debug.Log("Completed ArrangeChildrenByName.");
     }
 
+    public void ShowTedashi(bool IsTedashi)
+    {
+        if (!IsTedashi)
+        {
+            if (LastTsumoTileObject)
+                Destroy(LastTsumoTileObject);
+            LastTsumoTileObject = null;
+        }
+        else
+        {
+            StartCoroutine(ShowTedashiCoroutine());
+        }
+    }
+
+    private IEnumerator ShowTedashiCoroutine()
+    {
+        // 1. Remove null values from indexToChild and update the list
+        indexToChild = indexToChild.Where(obj => obj != null).ToList();
+
+        if (indexToChild.Count == 0)
+        {
+            Debug.LogError("All objects in indexToChild are null.");
+            yield break;
+        }
+
+        // 2. Pick random object from updated indexToChild
+        int randomIndex = UnityEngine.Random.Range(0, indexToChild.Count);
+        GameObject randomObject = indexToChild[randomIndex];
+
+        // 3. Hide it
+        randomObject.SetActive(false);
+        
+        // 4. Wait 1 second
+        yield return new WaitForSeconds(1f); //Destroy(randomObject ); 1초 기다리는동안 Destroy 당함
+        if (!randomObject)
+        {
+            yield break;
+        }
+        // 5. Destroy LastTsumoTileObject if it exists
+        if (LastTsumoTileObject)
+        {
+            Destroy(LastTsumoTileObject);
+            LastTsumoTileObject = null;
+        }
+
+        // 6. Show it
+        randomObject.SetActive(true);
+    }
+
+
+
     public void ShowTsumoTile(GameObject lastTsumoTileObject)
     {
         if (lastTsumoTileObject == null)
         {
-            Debug.LogError("Tsumo tile is not provided.");
+            Debug.LogError("remove last tsumo tile.");
+            if (LastTsumoTileObject)
+                Destroy(LastTsumoTileObject);
+            LastTsumoTileObject = null;
             return;
         }
 
         LastTsumoTileObject = lastTsumoTileObject;
-        for (int i = indexToChild.Count - 1; i >= 0; --i)
+        // Adjust child's size (if it has a RectTransform)
+        RectTransform rectTransform = LastTsumoTileObject.GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            rectTransform.sizeDelta = new Vector2(cellWidth, cellHeight);
+        }
+        else
+        {
+            // If not RectTransform, adjust localScale
+            LastTsumoTileObject.transform.localScale = new Vector3(cellWidth / 100f, cellHeight / 100f, 1);
+        }
+        for (int i= indexToChild.Count - 1; i >= 0; --i)
         {
             if (indexToChild[i] != null)
             {
-                Vector3 lastTilePosition = indexToChild[i].transform.position;
-                lastTilePosition.x += cellWidth + additionalSpacingX;
-                lastTsumoTileObject.transform.localPosition = lastTsumoTileObject.transform.parent.InverseTransformPoint(lastTilePosition);
+
+                Debug.Log($"[ShowTsumoTile] Last Tile index : {i+1}");
+
+                Vector3 lastTilePosition = indexToChild[i].transform.localPosition;
+                Vector3 position = new Vector3(
+                    lastTilePosition.x + cellWidth + spacingX + additionalSpacingX,
+                    lastTilePosition.y + spacingY,
+                    lastTilePosition.z
+                );
+                lastTsumoTileObject.transform.localPosition = position;
 
                 Debug.Log("A new Tsumo tile has been added with adjusted position.");
                 return;
@@ -300,6 +373,7 @@ public class TileGrid : MonoBehaviour
         Debug.Log($"The selected tile {tileName} has been discarded and the grid rearranged.");
 
     }
+
 
     public void AddTileToLastIndex(GameObject tile)
     {

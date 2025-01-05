@@ -213,9 +213,9 @@ public class TileEvent : MonoBehaviour
         Debug.Log($"[OnHoverEnter] isDraggable: {isDraggable}, isDragging: {isDragging}");
         Debug.Log($"[OnHoverEnter] PlayerIndex: {pm.PlayerIndex}, IsPlayerTurn: {pm.playerStatus.IsPlayerTurn}");
         if (!isDraggable || isDragging) return;
-        if (!pm)
-            pm = playerManager.GetComponent<PlayerManager>();
-        if (pm == null || !pm.CheckIfPlayerTurn()) return;
+        //if (!pm)
+        //    pm = playerManager.GetComponent<PlayerManager>();
+        //if (pm == null || !pm.CheckIfPlayerTurn()) return;
 
         Debug.Log($"OnHoverEnter: Mouse entered over {gameObject.name}");
         startParent = transform.parent.gameObject;
@@ -227,9 +227,9 @@ public class TileEvent : MonoBehaviour
     public void OnHoverExit()
     {
         if (!isDraggable || isHoveringEnd || isDragging) return;
-        if (!pm)
-            pm = playerManager.GetComponent<PlayerManager>();
-        if (pm == null || !pm.CheckIfPlayerTurn()) return;
+        //if (!pm)
+        //    pm = playerManager.GetComponent<PlayerManager>();
+        //if (pm == null || !pm.CheckIfPlayerTurn()) return;
 
         Debug.Log($"OnHoverExit: Mouse exited from {gameObject.name}");
         ResetPosition();

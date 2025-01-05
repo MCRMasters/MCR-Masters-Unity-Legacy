@@ -8,6 +8,8 @@ using Game.Shared;
 using System.Collections;
 
 
+
+
 public class ServerManager : NetworkBehaviour
 {
     private List<int> tileDeck = new();
@@ -30,6 +32,36 @@ public class ServerManager : NetworkBehaviour
     private bool gameStarted = false;
 
 
+    public int GetRoundIndex()
+    {
+        return CurrentRound % 4 + ((CurrentRound % 4 == 0) ? 4 : 0);
+    }
+
+
+    public int GetTilesLeft()
+    {
+        return tileDrawIndexRight - tileDrawIndexLeft + 1;
+    }
+
+    private void BroadcastRoundIndex()
+    {
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            if (PlayerManagers[i] == null)
+                continue;
+            PlayerManagers[i].RpcUpdateRoundIndex(GetRoundIndex());
+        }
+    }
+
+    private void BroadcastTilesLeft()
+    {
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            if (PlayerManagers[i] == null)
+                continue;
+            PlayerManagers[i].RpcUpdateTilesLeft(GetTilesLeft());
+        }
+    }
 
     private void ProceedNextTurn(int playerWindIndex)
     {
@@ -55,7 +87,7 @@ public class ServerManager : NetworkBehaviour
             StartCoroutine(StartNewRoundCoroutine());
             return;
         }
-
+        BroadcastTilesLeft();
         // TsumoOneTile 호출
         int tile = drawnTiles[0];
         Debug.Log($"[ProceedNextTurn] Player {playerWindIndex} drew tile: {TileDictionary.NumToString[tile]}");
@@ -243,7 +275,7 @@ public class ServerManager : NetworkBehaviour
         }
 
         AssignPlayerIndicesAndNames();
-        GameStarted();
+        StartCoroutine(GameStarted());
     }
 
     private void AssignPlayerIndicesAndNames()
@@ -285,12 +317,12 @@ public class ServerManager : NetworkBehaviour
         }
     }
 
-    public void GameStarted()
+    public IEnumerator GameStarted()
     {
         if (gameStarted)
         {
             Debug.LogWarning("Game already started. Ignoring duplicate call.");
-            return;
+            yield break;
         }
 
         gameStarted = true;
@@ -298,18 +330,10 @@ public class ServerManager : NetworkBehaviour
         Debug.Log("Game started. Ready for the first round initialization.");
         Debug.Log($"PlayerManagers count: {PlayerManagers?.Length}");
 
-        for (int i = 0; i < PlayerManagers.Length; i++)
-        {
-            if (PlayerManagers[i] == null)
-            {
-                Debug.LogError($"PlayerManager at index {i} is null.");
-                continue;
-            }
+        // InitializePlayersCoroutine 호출로 중복 제거
+        yield return StartCoroutine(InitializePlayersCoroutine());
 
-            // PlayerManager에게 정보를 전달
-            Debug.Log($"Passing initialization data to PlayerManager[{i}].");
-            PlayerManagers[i].InitializePlayerOnClient(Wind.EAST + i, RoundWind);
-        }
+        // 플레이어 초기화가 완료되면 새로운 라운드 시작
         StartNewRounds();
     }
 
@@ -354,12 +378,12 @@ public class ServerManager : NetworkBehaviour
         }
 
         BroadcastPlayerIndices();
-
+        BroadcastRoundIndex();
         Debug.Log($"New round started: Round {CurrentRound}, Wind: {RoundWind}");
 
         // to avoid representing last discarded tile from the previous round
         yield return new WaitForSeconds(0.1f);
-        yield return InitializePlayersCoroutine();
+        yield return StartCoroutine(InitializePlayersCoroutine());
 
         InitializeTiles();
         ShuffleTiles();
@@ -432,7 +456,7 @@ public class ServerManager : NetworkBehaviour
         }
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
-            PlayerManagers[i].playerStatus.SeatWind = i + Wind.EAST;
+            PlayerManagers[i].playerStatus = new PlayerStatus(PlayerManagers[i].playerStatus.CurrentScore, i + Wind.EAST, RoundWind);
         }
 
         Debug.Log("Player positions adjusted after round and reassigned.");
@@ -517,6 +541,7 @@ public class ServerManager : NetworkBehaviour
                 Debug.LogError("Not enough tiles to deal to player " + PlayerManagers[i].PlayerName);
                 return;
             }
+            BroadcastTilesLeft();
             handTiles.Sort();
             handList[i].DrawFirstHand(handTiles);
             Debug.Log("Dealt starting hand to player " + PlayerManagers[i].PlayerName);

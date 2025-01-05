@@ -43,6 +43,7 @@ public class PlayerManager : NetworkBehaviour
     public GameObject EnemyHaipaiToi;
     public GameObject EnemyHaipaiKami;
     public GameObject EnemyHaipaiShimo;
+    public GameObject[] EnemyHaipaiList;
     public GameObject PlayerHaipai;
 
     public GameObject PlayerKawa;
@@ -51,12 +52,41 @@ public class PlayerManager : NetworkBehaviour
     public GameObject EnemyKawaShimo;
     public GameObject[] EnemyKawaList;
 
-    public GameObject PlayerTsumoTile;
-    public GameObject EnemyTsumoTile;
+    public GameObject GameStatusUI;
 
 
     private int isValidDiscardResponse = -1; // Default is -1
     private bool isWaitingForResponse = false;
+
+    private int tilesLeft;
+    private int roundIndex;
+
+
+
+    [ClientRpc]
+    public void RpcUpdateTilesLeft(int updatedTilesLeft)
+    {
+        tilesLeft = updatedTilesLeft;
+    }
+
+    // 클라이언트에서 RoundIndex와 RoundWind 데이터를 업데이트
+    [ClientRpc]
+    public void RpcUpdateRoundIndex(int updatedRoundIndex)
+    {
+        roundIndex = updatedRoundIndex;
+    }
+
+    // RoundIndex와 RoundWind 값을 반환하는 메서드
+    public int GetRoundIndex()
+    {
+        return roundIndex;
+    }
+
+    public int GetTilesLeft()
+    {
+        return tilesLeft;
+    }
+
 
     public IEnumerator CheckVaildDiscardAsync(int tileID, Action<bool> callback)
     {
@@ -129,6 +159,12 @@ public class PlayerManager : NetworkBehaviour
         EnemyKawaList[0] = EnemyKawaShimo;
         EnemyKawaList[1] = EnemyKawaToi;
         EnemyKawaList[2] = EnemyKawaKami;
+        EnemyHaipaiList = new GameObject[3];
+        EnemyHaipaiList[0] = EnemyHaipaiShimo;
+        EnemyHaipaiList[1] = EnemyHaipaiToi;
+        EnemyHaipaiList[2] = EnemyHaipaiKami;
+
+        GameStatusUI = GameObject.Find("GameStatusUI");
     }
 
     public void SetPlayerTurn(bool isTurn)
@@ -248,36 +284,84 @@ public class PlayerManager : NetworkBehaviour
         tileGrid.ShowTsumoTile(spawnedTile);
         Debug.Log($"Displaying Tsumo tile for player {playerIndex}.");
         Debug.Log($"[TargetTsumoTile] Is Player Turn: {playerStatus.IsPlayerTurn}");
-        // TsumoTileDisplayer 설정
-        //TsumoTileDisplayer.SetTilePrefab(TilePrefabArray[tile]); // 타일 프리팹 설정
-        //TsumoTileDisplayer.SetGridLayoutGroup(PlayerHaipai); // PlayerKawa를 GridLayoutGroup으로 설정
-
-        // Tsumo 타일 표시
-        //TsumoTileDisplayer.ShowTsumoTile();
+        CmdDisplayEnemyTsumoTile(tile, playerIndex);
     }
 
     [Command]
     public void CmdDisplayEnemyTsumoTile(int tile, int playerIndex)
     {
+        // 현재 씬에서 모든 PlayerManager 객체를 찾음
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
+        {
+            Debug.LogWarning("No PlayerManager instances found in the scene.");
+            return;
+        }
         RpcDisplayEnemyTsumoTile(tile, playerIndex);
+    }
+
+    public void DisplayEnemyTsumoTile(int tile, int playerIndex)
+    {
+        if (isServer)
+            return;
+        int relativeIndex = GetRelativeIndex(playerIndex);
+        if (relativeIndex < 0)
+        {
+            return;
+        }
+        EnemyHandTilesCount[relativeIndex]++;
+        Debug.Log($"[RpcDisplayEnemyTsumoTile] Get relative index {relativeIndex}");
+        GameObject haipaiPrefab = null;
+        switch (relativeIndex)
+        {
+            case 0:
+                haipaiPrefab = EnemyHaipaiShimo;
+                break;
+            case 1:
+                haipaiPrefab = EnemyHaipaiToi;
+                break;
+            case 2:
+                haipaiPrefab = EnemyHaipaiKami;
+                break;
+        }
+        TileGrid tileGrid = haipaiPrefab.GetComponent<TileGrid>();
+        if (tileGrid == null) return;
+        var spawnedTile = Instantiate(TileBackPrefab, haipaiPrefab.transform);
+        spawnedTile.name = "TileBack_14";
+        if (spawnedTile == null) return;
+        tileGrid.ShowTsumoTile(spawnedTile);
+        return;
     }
 
     [ClientRpc]
     public void RpcDisplayEnemyTsumoTile(int tile, int playerIndex)
     {
-        if (playerIndex == PlayerIndex)
+        Debug.Log($"[RpcDisplayEnemyTsumoTile] in function. Player Index here: {PlayerIndex}, Enemy's Index who tsumo: {playerIndex}, tile: {TileDictionary.NumToString[tile]}");
+        // 현재 씬에서 모든 PlayerManager 객체를 찾음
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
         {
+            Debug.LogWarning("No PlayerManager instances found in the scene.");
             return;
         }
-        int relativeIndex = GetRelativeIndex(playerIndex);
-        if(relativeIndex < 0)
+
+        Debug.Log($"[RpcDisplayEnemyTsumoTile] Found {allPlayerManagers.Length} PlayerManager instances:");
+        foreach (var playerManager in allPlayerManagers)
         {
-            return;
+            if (playerManager == null)
+                continue;
+            if (playerManager.PlayerIndex == playerIndex)
+                continue;
+            if (playerManager.isOwned)
+            {
+                Debug.Log($"[RpcDisplayEnemyTsumoTile] player manager owned, Player Index here: {playerManager.PlayerIndex}, Enemy's Index who tsumo: {playerIndex}");
+                playerManager.DisplayEnemyTsumoTile(tile, playerIndex);
+                return;
+            }
         }
-        EnemyHandTilesCount[relativeIndex]++;
-        //TsumoTileDisplayer.SetTilePrefab(TileBackPrefab);
-        //TsumoTileDisplayer.SetGridLayoutGroup(EnemyKawaList[relativeIndex]);
-        //TsumoTileDisplayer.ShowTsumoTile();
+        
     }
 
 
@@ -335,14 +419,14 @@ public class PlayerManager : NetworkBehaviour
             Debug.Log($"Assigned PlayerIndex {playerManager.PlayerIndex} to PlayerManager with NetId: {playerManager.GetComponent<NetworkIdentity>().netId}");
             if (networkConnection != null)
             {
-                TargetDiscardTile(networkConnection, tileId, PlayerIndex);
+                TargetDiscardTile(networkConnection, tileId, PlayerIndex, isTsumoTile);
             }
         }
     }
 
 
 
-    public IEnumerator HandleTileDiscardCoroutine(int tileId, int playerIndex, Action onComplete)
+    public IEnumerator HandleTileDiscardCoroutine(int tileId, int playerIndex, bool IsTsumoTile, Action onComplete)
     {
         // tileId로 TilePrefabArray에서 해당 프리팹 가져오기
         if (tileId < 0 || tileId >= TilePrefabArray.Length)
@@ -353,6 +437,7 @@ public class PlayerManager : NetworkBehaviour
         }
 
         GameObject kawaPrefab = null;
+        GameObject haipaiPrefab = null;
         Debug.Log($"Discarded player is {playerIndex}, here player is {PlayerIndex}");
         if (playerIndex == PlayerIndex)
         {
@@ -366,12 +451,15 @@ public class PlayerManager : NetworkBehaviour
             {
                 case 0:
                     kawaPrefab = EnemyKawaShimo;
+                    haipaiPrefab = EnemyHaipaiShimo;
                     break;
                 case 1:
                     kawaPrefab = EnemyKawaToi;
+                    haipaiPrefab = EnemyHaipaiToi;
                     break;
                 case 2:
                     kawaPrefab = EnemyKawaKami;
+                    haipaiPrefab = EnemyHaipaiKami;
                     break;
                 default:
                     Debug.LogError($"Invalid relative index: {relativeIndex}");
@@ -384,6 +472,15 @@ public class PlayerManager : NetworkBehaviour
         {
             onComplete?.Invoke();
             yield break;
+        }
+
+        if (haipaiPrefab != null)
+        {
+            TileGrid haipaiTileGrid = haipaiPrefab.GetComponent<TileGrid>();
+            if (haipaiTileGrid != null)
+            {
+                haipaiTileGrid.ShowTedashi(!IsTsumoTile);
+            }
         }
 
         // 타일 생성
@@ -422,7 +519,7 @@ public class PlayerManager : NetworkBehaviour
 
 
     [TargetRpc]
-    public void TargetDiscardTile(NetworkConnection target, int tileId, int playerIndex)
+    public void TargetDiscardTile(NetworkConnection target, int tileId, int playerIndex, bool IsTsumoTile)
     {
         PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
 
@@ -438,7 +535,7 @@ public class PlayerManager : NetworkBehaviour
                 bool isComplete = false;
 
                 // 코루틴 실행 및 완료 시 플래그 설정
-                playerManager.StartCoroutine(playerManager.HandleTileDiscardCoroutine(tileId, playerIndex, () =>
+                playerManager.StartCoroutine(playerManager.HandleTileDiscardCoroutine(tileId, playerIndex, IsTsumoTile, () =>
                 {
                     Debug.Log($"HandleTileDiscardCoroutine for tileId {tileId} and playerIndex {playerIndex} completed.");
                     isComplete = true;
@@ -534,6 +631,10 @@ public class PlayerManager : NetworkBehaviour
         EnemyKawaList[0] = EnemyKawaShimo;
         EnemyKawaList[1] = EnemyKawaToi;
         EnemyKawaList[2] = EnemyKawaKami;
+        EnemyHaipaiList = new GameObject[3];
+        EnemyHaipaiList[0] = EnemyHaipaiShimo;
+        EnemyHaipaiList[1] = EnemyHaipaiToi;
+        EnemyHaipaiList[2] = EnemyHaipaiKami;
 
         // ServerManager에 플레이어 등록
         serverManager.IncrementPlayerCount();
@@ -562,6 +663,8 @@ public class PlayerManager : NetworkBehaviour
 
     public void InitializeRoundState()
     {
+        var gameStatusUI = GameStatusUI.GetComponent<GameStatusUI>();
+        gameStatusUI.IsUpdated = false;
         Debug.Log($"InitializeRoundState, Player Index: {PlayerIndex}, SeatWind: {playerStatus.SeatWind}, RoundWind: {playerStatus.RoundWind}");
 
         // TargetDiscardTile 실행 중인지 확인
@@ -601,6 +704,13 @@ public class PlayerManager : NetworkBehaviour
             else
             {
                 EnemyKawaTiles[i].Clear();
+            }
+        }
+        if (GameStatusUI != null)
+        {
+            if (gameStatusUI != null)
+            {
+                gameStatusUI.Initialize();
             }
         }
         CmdSetInitializeFlagEnd();

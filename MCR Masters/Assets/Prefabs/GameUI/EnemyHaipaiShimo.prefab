@@ -145,5 +145,5 @@ MonoBehaviour:
   cellHeight: 75
   spacingX: 0
   spacingY: 0
-  additionalSpacingX: 0
+  additionalSpacingX: 15
   playerManager: {fileID: 0}
