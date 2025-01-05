@@ -3,6 +3,11 @@ using Mirror;
 using UnityEngine;
 using Game.Shared;
 using System.Linq;
+using Mirror.Examples.MultipleMatch;
+using System.Collections;
+using System;
+using static Unity.Burst.Intrinsics.X86.Avx;
+using System.Threading.Tasks;
 
 public class PlayerManager : NetworkBehaviour
 {
@@ -12,8 +17,13 @@ public class PlayerManager : NetworkBehaviour
     [SyncVar]
     public string PlayerName;
 
-    public PlayerStatus PlayerStatus = new PlayerStatus();
+    [SyncVar(hook = nameof(OnPlayerStatusChanged))]
+    public PlayerStatus playerStatus;
 
+    private void OnPlayerStatusChanged(PlayerStatus oldStatus, PlayerStatus newStatus)
+    {
+        Debug.Log($"on Player {PlayerIndex}, PlayerStatus changed from {oldStatus} to {newStatus}");
+    }
 
     private List<int> PlayerHandTiles = new();
     private List<Block> PlayerCallBlocksList = new();
@@ -39,9 +49,68 @@ public class PlayerManager : NetworkBehaviour
     public GameObject EnemyKawaToi;
     public GameObject EnemyKawaKami;
     public GameObject EnemyKawaShimo;
+    public GameObject[] EnemyKawaList;
 
     public GameObject PlayerTsumoTile;
     public GameObject EnemyTsumoTile;
+
+
+    private int isValidDiscardResponse = -1; // Default is -1
+    private bool isWaitingForResponse = false;
+
+    public IEnumerator CheckVaildDiscardAsync(int tileID, Action<bool> callback)
+    {
+        if (!isOwned)
+        {
+            Debug.LogError("[CheckVaildDiscardAsync] This method can only be executed by the owning client.");
+            callback?.Invoke(false);
+            yield break;
+        }
+
+        Debug.Log($"[CheckVaildDiscardAsync] Sending discard check for tileID: {tileID}");
+
+        isWaitingForResponse = true;
+        isValidDiscardResponse = -1;
+
+        // 서버에 유효성 검사 요청
+        CmdCheckValidDiscard(tileID);
+        Debug.Log($"[CheckVaildDiscardAsync] Requested CmdCheckValidDiscard Tile: {TileDictionary.NumToString[tileID]}, isWaitingForResponse: {isWaitingForResponse}, isValidDiscardResponse:  {isValidDiscardResponse}");
+        // 응답이 올 때까지 대기
+        while (isWaitingForResponse)
+        {
+            yield return null; // 한 프레임 대기
+        }
+
+        Debug.Log($"[CheckVaildDiscardAsync] Received discard validation response: {isValidDiscardResponse}");
+        callback?.Invoke(isValidDiscardResponse == 1);
+    }
+
+
+    [Command]
+    private void CmdCheckValidDiscard(int tileID)
+    {
+        if (serverManager == null)
+        {
+            Debug.LogError("[CmdCheckValidDiscard] ServerManager is not assigned!");
+            return;
+        }
+        // debug code
+        // Perform the server-side validation
+        int result = serverManager.IsVaildDiscard(tileID, PlayerIndex);
+
+        TargetUpdateDiscardResult(connectionToClient, result);
+        Debug.Log($"[CmdCheckValidDiscard] Result of discard validation: {result}");
+    }
+
+
+    [TargetRpc]
+    private void TargetUpdateDiscardResult(NetworkConnection target, int result)
+    {
+        isValidDiscardResponse = result;
+        isWaitingForResponse = false;
+
+        Debug.Log($"[TargetUpdateDiscardResult] Received discard validation result: {result}");
+    }
 
     public override void OnStartClient()
     {
@@ -56,11 +125,17 @@ public class PlayerManager : NetworkBehaviour
         EnemyKawaToi = GameObject.Find("EnemyKawaToi");
         EnemyKawaKami = GameObject.Find("EnemyKawaKami");
         EnemyKawaShimo = GameObject.Find("EnemyKawaShimo");
+        EnemyKawaList = new GameObject[3];
+        EnemyKawaList[0] = EnemyKawaShimo;
+        EnemyKawaList[1] = EnemyKawaToi;
+        EnemyKawaList[2] = EnemyKawaKami;
     }
 
     public void SetPlayerTurn(bool isTurn)
     {
-        PlayerStatus.IsPlayerTurn = isTurn;
+        var newStatus = playerStatus;
+        newStatus.IsPlayerTurn = isTurn;
+        playerStatus = newStatus;
         Debug.Log($"Player {PlayerIndex}: IsPlayerTurn set to {isTurn}");
     }
 
@@ -80,18 +155,27 @@ public class PlayerManager : NetworkBehaviour
     // 개별 상대에 타일 스폰 로직
     private void SpawnTilesForEnemy(GameObject enemyHaipai, int tileCount)
     {
+
         if (enemyHaipai == null)
         {
             Debug.LogWarning("EnemyHaipai is null. Skipping tile spawning.");
             return;
         }
-
+        TileGrid tileGrid = enemyHaipai.GetComponent<TileGrid>();
+        if (tileGrid == null)
+        {
+            Debug.LogError("TileGrid component not found on enemyHaipai!");
+            return;
+        }
         for (int i = 0; i < tileCount; i++)
         {
             GameObject spawnedTile = Instantiate(TileBackPrefab, enemyHaipai.transform);
             spawnedTile.name = $"TileBack_{i + 1}";
+            var spawnedTileEvent = spawnedTile.GetComponent<TileEvent>();
+            spawnedTileEvent.SetUndraggable();
+            tileGrid.AddTileToLastIndex(spawnedTile);
         }
-
+        //tileGrid.UpdateLayoutByName();
         Debug.Log($"Spawned {tileCount} TileBacks for {enemyHaipai.name}.");
     }
 
@@ -102,6 +186,29 @@ public class PlayerManager : NetworkBehaviour
         // 클라이언트에서 초기 손패를 스폰하거나 UI에 반영
         Debug.Log($"TargetSpawnFirstHand received. ");
 
+        if (PlayerHaipai == null)
+        {
+            Debug.LogError("PlayerHaipai is null!");
+            return;
+        }
+        else
+        {
+            Debug.Log($"PlayerHaipai is: {PlayerHaipai.name}");
+            var components = PlayerHaipai.GetComponents<Component>();
+            foreach (var component in components)
+            {
+                Debug.Log($"Component: {component.GetType().Name}");
+            }
+
+        }
+
+
+        TileGrid tileGrid = PlayerHaipai.GetComponent<TileGrid>();
+        if (tileGrid == null)
+        {
+            Debug.LogError("TileGrid component not found!");
+            return;
+        }
         for (int tileId = 0; tileId < closedTiles.Count; tileId++)
         {
             for (int tileCount = 0; tileCount < closedTiles[tileId]; tileCount++)
@@ -115,85 +222,138 @@ public class PlayerManager : NetworkBehaviour
                 }
             }
         }
+        
+        if (tileGrid)
+        {
+            tileGrid.UpdateLayoutByName();
+        }
         SpawnEnemyFirstHand();
         Debug.Log("First hand spawned successfully on client.");
     }
 
 
-    [Command]
-    public void CmdTsumoTile(int tile)
-    {
-        if (!PlayerStatus.IsPlayerTurn)
-        {
-            Debug.LogError("It's not the player's turn.");
-            return;
-        }
 
-        // Server-side 로직
-        Debug.Log($"CmdTsumoTile called by Player {PlayerIndex} for tile {TileDictionary.NumToString[tile]}.");
-        RpcTsumoTile(tile);
+    [TargetRpc]
+    public void TargetTsumoTile(NetworkConnection target, int tile, int playerIndex)
+    {
+        Debug.Log($"TargetTsumoTile called with tile {tile}.");
+
+
+
+        TileGrid tileGrid = PlayerHaipai.GetComponent<TileGrid>();
+        if (tileGrid == null) return;
+        GameObject spawnedTile = Instantiate(TilePrefabArray[tile], PlayerHaipai.transform);
+        if(spawnedTile == null) return;
+        spawnedTile.name = TileDictionary.NumToString[tile];
+        tileGrid.ShowTsumoTile(spawnedTile);
+        Debug.Log($"Displaying Tsumo tile for player {playerIndex}.");
+        Debug.Log($"[TargetTsumoTile] Is Player Turn: {playerStatus.IsPlayerTurn}");
+        // TsumoTileDisplayer 설정
+        //TsumoTileDisplayer.SetTilePrefab(TilePrefabArray[tile]); // 타일 프리팹 설정
+        //TsumoTileDisplayer.SetGridLayoutGroup(PlayerHaipai); // PlayerKawa를 GridLayoutGroup으로 설정
+
+        // Tsumo 타일 표시
+        //TsumoTileDisplayer.ShowTsumoTile();
+    }
+
+    [Command]
+    public void CmdDisplayEnemyTsumoTile(int tile, int playerIndex)
+    {
+        RpcDisplayEnemyTsumoTile(tile, playerIndex);
     }
 
     [ClientRpc]
-    public void RpcTsumoTile(int tile)
+    public void RpcDisplayEnemyTsumoTile(int tile, int playerIndex)
     {
-        Debug.Log($"RpcTsumoTile received for tile {TileDictionary.NumToString[tile]}.");
-        // 클라이언트에서 UI 업데이트나 추가 로직 구현 가능
+        if (playerIndex == PlayerIndex)
+        {
+            return;
+        }
+        int relativeIndex = GetRelativeIndex(playerIndex);
+        if(relativeIndex < 0)
+        {
+            return;
+        }
+        EnemyHandTilesCount[relativeIndex]++;
+        //TsumoTileDisplayer.SetTilePrefab(TileBackPrefab);
+        //TsumoTileDisplayer.SetGridLayoutGroup(EnemyKawaList[relativeIndex]);
+        //TsumoTileDisplayer.ShowTsumoTile();
     }
 
 
-    [Command]
-    public void CmdDiscardTile(GameObject tile)
+    public void DebugAllPlayerManagers()
     {
-        if (tile == null) return;
-        if (!PlayerStatus.IsPlayerTurn)
+        // 현재 씬에서 모든 PlayerManager 객체를 찾음
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
         {
-            Debug.LogError("It's not the player's turn.");
+            Debug.LogWarning("No PlayerManager instances found in the scene.");
             return;
         }
 
-        string prefabName = tile.name;
-        string prefix = prefabName.Substring(0, 2);
+        Debug.Log($"Found {allPlayerManagers.Length} PlayerManager instances:");
+        foreach (var playerManager in allPlayerManagers)
+        {
+            // PlayerManager의 정보를 출력
+            Debug.Log($"PlayerManager: PlayerIndex = {playerManager.PlayerIndex}, PlayerName = {playerManager.PlayerName}, NetId = {playerManager.GetComponent<NetworkIdentity>()?.netId}");
+        }
+    }
 
-        if (!TileDictionary.StringToNum.TryGetValue(prefix, out int index))
+
+
+
+    [Command]
+    public void CmdDiscardTile(string tileName, bool isTsumoTile)
+    {
+        string prefix = tileName.Substring(0, 2);
+
+        if (!TileDictionary.StringToNum.TryGetValue(prefix, out int tileId))
         {
             Debug.LogError($"Invalid tile prefix: {prefix}");
             return;
         }
 
-        int playerIndex = PlayerIndex;
-        RpcDiscardTile(index, playerIndex);
-
-        Destroy(tile);
-    }
-
-    [ClientRpc]
-    public void RpcDiscardTile(int index, int playerIndex)
-    {
-        if (PlayerTsumoTile == null)
+        if (PlayerKawa == null)
         {
-            Debug.LogError("PlayerTsumo is null.");
+            Debug.LogError("PlayerKawa is null. Cannot get TileGrid component.");
             return;
         }
-        int tileId = TileDictionary.StringToNum[PlayerTsumoTile.name.Substring(0, 2)];
 
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
+        {
+            Debug.LogWarning("No PlayerManager instances found in the scene.");
+            return;
+        }
+
+        Debug.Log($"Found {allPlayerManagers.Length} PlayerManager instances:");
+        foreach (var playerManager in allPlayerManagers)
+        {
+            NetworkConnection networkConnection = playerManager.GetComponent<NetworkIdentity>().connectionToClient;
+            Debug.Log($"Assigned PlayerIndex {playerManager.PlayerIndex} to PlayerManager with NetId: {playerManager.GetComponent<NetworkIdentity>().netId}");
+            if (networkConnection != null)
+            {
+                TargetDiscardTile(networkConnection, tileId, PlayerIndex);
+            }
+        }
+    }
+
+
+
+    public IEnumerator HandleTileDiscardCoroutine(int tileId, int playerIndex, Action onComplete)
+    {
         // tileId로 TilePrefabArray에서 해당 프리팹 가져오기
         if (tileId < 0 || tileId >= TilePrefabArray.Length)
         {
             Debug.LogError($"Invalid tileId {tileId}. It is out of range: {TilePrefabArray.Length}.");
-            return;
-        }
-
-        GameObject tilePrefab = TilePrefabArray[tileId]; // TileId로 프리팹 참조
-        if (tilePrefab == null)
-        {
-            Debug.LogError($"TilePrefab for tileId {tileId} is null.");
-            return;
+            onComplete?.Invoke();
+            yield break;
         }
 
         GameObject kawaPrefab = null;
-
-        // playerIndex를 기준으로 Player/Enemy 구분
+        Debug.Log($"Discarded player is {playerIndex}, here player is {PlayerIndex}");
         if (playerIndex == PlayerIndex)
         {
             kawaPrefab = PlayerKawa;
@@ -201,46 +361,114 @@ public class PlayerManager : NetworkBehaviour
         else
         {
             int relativeIndex = GetRelativeIndex(playerIndex);
+            Debug.Log($"Get relative index {relativeIndex}");
             switch (relativeIndex)
             {
-                case 0: // Shimo (오른쪽)
+                case 0:
                     kawaPrefab = EnemyKawaShimo;
                     break;
-                case 1: // Toi (맞은편)
+                case 1:
                     kawaPrefab = EnemyKawaToi;
                     break;
-                case 2: // Kami (왼쪽)
+                case 2:
                     kawaPrefab = EnemyKawaKami;
                     break;
                 default:
                     Debug.LogError($"Invalid relative index: {relativeIndex}");
-                    return;
+                    onComplete?.Invoke();
+                    yield break;
             }
         }
 
-        if (kawaPrefab != null)
+        if (kawaPrefab == null)
         {
-            // Tile prefab 생성 및 Grid Layout Group에 추가
-            GameObject spawnedTile = Instantiate(tilePrefab, kawaPrefab.transform);
-            spawnedTile.name = TileDictionary.NumToString[tileId]; // 타일 이름 설정
-            spawnedTile.transform.localScale = Vector3.one; // 크기 조정
+            onComplete?.Invoke();
+            yield break;
         }
-        else
+
+        // 타일 생성
+        GameObject spawnedTile = Instantiate(TilePrefabArray[tileId], kawaPrefab.transform);
+        if (spawnedTile == null)
         {
-            Debug.LogError("KawaPrefab is null. Cannot spawn the tile.");
+            onComplete?.Invoke();
+            yield break;
         }
+
+        spawnedTile.name = TileDictionary.NumToString[tileId];
+        TileEvent tileEvent = spawnedTile.GetComponent<TileEvent>();
+        if (tileEvent != null)
+        {
+            tileEvent.SetUndraggable();
+        }
+
+        Debug.Log($"Kawa Name: {kawaPrefab.name}, Components: {string.Join(", ", kawaPrefab.GetComponents<Component>().Select(c => c.GetType().Name))}");
+
+        // TileGrid에 타일 추가
+        TileGrid tileGrid = kawaPrefab.GetComponent<TileGrid>();
+        if (tileGrid == null)
+        {
+            Debug.LogError("TileGrid component not found on PlayerKawa.");
+            onComplete?.Invoke();
+            yield break;
+        }
+
+        tileGrid.AddTileToLastIndex(spawnedTile);
+        Debug.Log($"Tile {spawnedTile.name} successfully added to {kawaPrefab.name}.");
+        onComplete?.Invoke(); // 작업 완료 알림
+    }
+
+
+    private bool IsTargetDiscardTileRunning = false; // TargetDiscardTile 실행 상태를 나타내는 플래그
+
+
+    [TargetRpc]
+    public void TargetDiscardTile(NetworkConnection target, int tileId, int playerIndex)
+    {
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        foreach (var playerManager in allPlayerManagers)
+        {
+            if (playerManager.isOwned)
+            {
+                Debug.Log($"Executing TargetRpc on owned PlayerManager. PlayerIndex: {playerManager.PlayerIndex}");
+                // TargetDiscardTile 시작
+                playerManager.IsTargetDiscardTileRunning = true;
+
+                // 완료 여부를 확인하기 위한 플래그
+                bool isComplete = false;
+
+                // 코루틴 실행 및 완료 시 플래그 설정
+                playerManager.StartCoroutine(playerManager.HandleTileDiscardCoroutine(tileId, playerIndex, () =>
+                {
+                    Debug.Log($"HandleTileDiscardCoroutine for tileId {tileId} and playerIndex {playerIndex} completed.");
+                    isComplete = true;
+                    playerManager.IsTargetDiscardTileRunning = false;
+                }));
+
+                // 대기 루프
+                playerManager.StartCoroutine(WaitUntilComplete(() => isComplete));
+                return;
+            }
+        }
+    }
+
+    // 대기 루프를 구현한 코루틴
+    private IEnumerator WaitUntilComplete(Func<bool> completionCheck)
+    {
+        yield return new WaitUntil(completionCheck);
+        Debug.Log("TargetDiscardTile operation completed.");
     }
 
 
 
     // 상대적인 인덱스를 계산 (Shimo, Kami, Toi 순서)
-    private int GetRelativeIndex(int otherPlayerIndex)
+    public int GetRelativeIndex(int otherPlayerIndex)
     {
         for (int i = 0; i < EnemyIndexMap.Length; i++)
         {
             if (EnemyIndexMap[i] == otherPlayerIndex)
             {
-                return i; // Shimo (0), Kami (1), Toi (2) 순서로 반환
+                return i; // Shimo (0), Toi (1), Kami (2) 순서로 반환
             }
         }
         return -1; // 예상치 못한 경우
@@ -261,12 +489,86 @@ public class PlayerManager : NetworkBehaviour
     }
 
 
+    private void emptyGrid(GameObject gameObject)
+    {
+        TileGrid tileGrid = gameObject.GetComponent<TileGrid>();
+        if (tileGrid == null)
+        {
+            Debug.LogError($"TileGrid component not found on {gameObject.name}.");
+            return;
+        }
+        Debug.Log($"Empty Grid Function on {gameObject.name}");
+        tileGrid.EmptyAll();
+    }
 
-    [Server]
+
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+
+        // ServerManager 찾기
+        if (serverManager == null)
+        {
+            serverManager = UnityEngine.Object.FindAnyObjectByType<ServerManager>();
+
+            if (serverManager == null)
+            {
+                Debug.LogError("ServerManager not found in the scene.");
+                return;
+            }
+
+            Debug.Log("ServerManager assigned to PlayerManager.");
+        }
+
+        // GameObject 초기화
+        PlayerHaipai = GameObject.Find("PlayerHaipai");
+        EnemyHaipaiToi = GameObject.Find("EnemyHaipaiToi");
+        EnemyHaipaiKami = GameObject.Find("EnemyHaipaiKami");
+        EnemyHaipaiShimo = GameObject.Find("EnemyHaipaiShimo");
+
+        PlayerKawa = GameObject.Find("PlayerKawa");
+        EnemyKawaToi = GameObject.Find("EnemyKawaToi");
+        EnemyKawaKami = GameObject.Find("EnemyKawaKami");
+        EnemyKawaShimo = GameObject.Find("EnemyKawaShimo");
+        EnemyKawaList = new GameObject[3];
+        EnemyKawaList[0] = EnemyKawaShimo;
+        EnemyKawaList[1] = EnemyKawaToi;
+        EnemyKawaList[2] = EnemyKawaKami;
+
+        // ServerManager에 플레이어 등록
+        serverManager.IncrementPlayerCount();
+    }
+
+
+    private IEnumerator WaitForTargetDiscardTile()
+    {
+        while (IsTargetDiscardTileRunning)
+        {
+            Debug.Log("TargetDiscardTile is still running. Waiting...");
+            yield return null; // 다음 프레임까지 대기
+        }
+
+        Debug.Log("TargetDiscardTile has completed. Proceeding with emptyGrid...");
+        emptyGrid(EnemyKawaToi);
+        emptyGrid(PlayerKawa);
+        emptyGrid(PlayerHaipai);
+        emptyGrid(EnemyHaipaiKami);
+        emptyGrid(EnemyHaipaiShimo);
+        emptyGrid(EnemyHaipaiToi);
+        emptyGrid(EnemyKawaKami);
+        emptyGrid(EnemyKawaShimo);
+    }
+
+
     public void InitializeRoundState()
     {
-        PlayerHandTiles.Clear();
+        Debug.Log($"InitializeRoundState, Player Index: {PlayerIndex}, SeatWind: {playerStatus.SeatWind}, RoundWind: {playerStatus.RoundWind}");
 
+        // TargetDiscardTile 실행 중인지 확인
+        StartCoroutine(WaitForTargetDiscardTile());
+
+
+        PlayerHandTiles.Clear();
         PlayerCallBlocksList.Clear();
 
         for (int i = 0; i < EnemyCallBlocksList.Length; i++)
@@ -301,66 +603,34 @@ public class PlayerManager : NetworkBehaviour
                 EnemyKawaTiles[i].Clear();
             }
         }
+        CmdSetInitializeFlagEnd();
     }
 
-
-    public override void OnStartServer()
+    [Command]
+    public void CmdSetInitializeFlagEnd()
     {
-        base.OnStartServer();
-
-        // ServerManager 찾기
-        if (serverManager == null)
-        {
-            serverManager = UnityEngine.Object.FindAnyObjectByType<ServerManager>();
-
-            if (serverManager == null)
-            {
-                Debug.LogError("ServerManager not found in the scene.");
-                return;
-            }
-
-            Debug.Log("ServerManager assigned to PlayerManager.");
-        }
-
-        // ServerManager에 플레이어 등록
-        serverManager.IncrementPlayerCount();
-
-        // 모든 플레이어가 등록되었는지 확인
-        //if (serverManager.GetActivePlayerCount() == 4)
-        //{
-        //    Debug.Log("All players are registered. Proceeding to initialize game logic.");
-        //    serverManager.InitializePlayers();
-        //}
+        EndFlag_InitializePlayer = true;
     }
 
-    public override void OnStopServer()
+    private bool EndFlag_InitializePlayer;
+    [Server]
+    public void SetInitializeFlagFalse()
     {
-        base.OnStopServer();
-
-        if (serverManager != null)
-        {
-            // ServerManager에서 플레이어 제거
-            serverManager.DecrementPlayerCount();
-        }
+        EndFlag_InitializePlayer = false;
     }
-
-    [TargetRpc]
-    public void TargetPerformTsumo(NetworkConnection target, int tile)
+    [Server]
+    public bool IsInitializationComplete()
     {
-        // 클라이언트에서 Command 호출
-        CmdTsumoTile(tile);
+        return EndFlag_InitializePlayer;
     }
-
-
-
     [Server]
     public void InitializePlayerOnClient(Wind seatWind, Wind roundWind)
     {
         Debug.Log($"InitializePlayerOnClient called for PlayerManager[{PlayerIndex}]. SeatWind: {seatWind}, RoundWind: {roundWind}");
 
-        // PlayerStatus 생성자 사용
-        PlayerStatus = new PlayerStatus(seatWind, roundWind);
-        Debug.Log($"PlayerManager[{PlayerIndex}]: PlayerStatus initialized. SeatWind: {seatWind}, RoundWind: {roundWind}");
+        // playerStatus 생성자 사용
+        playerStatus = new PlayerStatus(playerStatus.CurrentScore, seatWind, roundWind);
+        Debug.Log($"PlayerManager[{PlayerIndex}]: PlayerStatus initialized. SeatWind: {seatWind}, RoundWind: {roundWind}, IsPlayerTurn: {playerStatus.IsPlayerTurn}, CurrentScore: {playerStatus.CurrentScore}");
 
         var networkIdentity = GetComponent<NetworkIdentity>();
         if (networkIdentity == null)
@@ -368,16 +638,6 @@ public class PlayerManager : NetworkBehaviour
             Debug.LogError($"PlayerManager[{PlayerIndex}]: NetworkIdentity is null.");
             return;
         }
-
-        Debug.Log($"PlayerManager[{PlayerIndex}]: NetworkIdentity found. NetId: {networkIdentity.netId}");
-
-        if (networkIdentity.connectionToClient == null)
-        {
-            Debug.LogError($"PlayerManager[{PlayerIndex}]: connectionToClient is null.");
-            return;
-        }
-
-        Debug.Log($"PlayerManager[{PlayerIndex}]: connectionToClient is valid. ConnectionId: {networkIdentity.connectionToClient.connectionId}");
 
         // TargetRpc 호출
         TargetInitializePlayer(networkIdentity.connectionToClient, seatWind, roundWind);
@@ -389,8 +649,7 @@ public class PlayerManager : NetworkBehaviour
     public void TargetInitializePlayer(NetworkConnection target, Wind seatWind, Wind roundWind)
     {
         Debug.Log($"TargetInitializePlayer called for PlayerManager[{PlayerIndex}]. SeatWind: {seatWind}, RoundWind: {roundWind}");
-
-        PlayerStatus = new PlayerStatus(seatWind, roundWind);
+        InitializeRoundState();
         Debug.Log($"PlayerManager[{PlayerIndex}]: PlayerStatus set on client.");
     }
 
@@ -399,6 +658,6 @@ public class PlayerManager : NetworkBehaviour
 
     public bool CheckIfPlayerTurn()
     {
-        return PlayerStatus.IsPlayerTurn;
+        return playerStatus.IsPlayerTurn;
     }
 }

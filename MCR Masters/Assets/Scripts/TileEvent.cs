@@ -3,18 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using Game.Shared;
+using System;
 
 public class TileEvent : MonoBehaviour
 {
     public GameObject Canvas;
     public GameObject PlayerHaipai;
-    private Vector3 originalPosition;
+    public GameObject playerManager;
+    PlayerManager pm;
 
     private bool isDragging = false;
     private bool isDraggable = true;
     private bool isHoveringEnd = false;
     private GameObject startParent;
-    private Vector2 startPosition;
+    private Vector2 offset; // 마우스 클릭 위치와 중심점의 차이
+    private Vector3 startPosition;
     private int siblingIndex = -1;
 
     private float discardThresholdY;
@@ -27,6 +31,27 @@ public class TileEvent : MonoBehaviour
 
         if (Canvas == null) Debug.LogError("Canvas not found in scene.");
         if (PlayerHaipai == null) Debug.LogError("PlayerHaipai not found in scene.");
+        pm = null;
+
+        // Find all GameObjects with PlayerManager script
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        // Filter by the `isOwned` property
+        foreach (var manager in allPlayerManagers)
+        {
+            if (manager.isOwned) // Assuming isOwned is a public property or field
+            {
+                playerManager = manager.gameObject;
+                pm = playerManager.GetComponent<PlayerManager>();
+                Debug.Log($"PlayerManager found: {playerManager.name}");
+                break;
+            }
+        }
+
+        if (playerManager == null)
+        {
+            Debug.LogError("No owned PlayerManager found in the scene.");
+        }
 
         discardThresholdY = Screen.height * 0.25f;
         Debug.Log($"Discard threshold set to {discardThresholdY} (25% of screen height).");
@@ -39,6 +64,7 @@ public class TileEvent : MonoBehaviour
         Debug.Log("Adding event listeners.");
         EventTrigger trigger = gameObject.AddComponent<EventTrigger>();
 
+        // Existing event listeners
         EventTrigger.Entry dragStartEntry = new EventTrigger.Entry { eventID = EventTriggerType.BeginDrag };
         dragStartEntry.callback.AddListener((data) => { StartDrag(); });
         trigger.triggers.Add(dragStartEntry);
@@ -54,78 +80,233 @@ public class TileEvent : MonoBehaviour
         EventTrigger.Entry hoverExitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
         hoverExitEntry.callback.AddListener((data) => { OnHoverExit(); });
         trigger.triggers.Add(hoverExitEntry);
+
+        // New click event listener
+        EventTrigger.Entry clickEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+        clickEntry.callback.AddListener((data) => { OnTileClick(); });
+        trigger.triggers.Add(clickEntry);
     }
+
+    // New click handler
+    private void OnTileClick()
+    {
+        if (!isDraggable || isDragging) return;
+        if (!pm)
+            pm = playerManager.GetComponent<PlayerManager>();
+        if (pm == null || !pm.CheckIfPlayerTurn()) return;
+        startParent = transform.parent.gameObject;
+        siblingIndex = transform.GetSiblingIndex();
+        startPosition = transform.position;
+        // 비동기적으로 HandleTileDiscard 호출
+        Wind roundWind = pm.playerStatus.RoundWind;
+        Wind seatWind = pm.playerStatus.SeatWind;
+        StartCoroutine(HandleTileDiscardCoroutine((isSuccess) =>
+        {
+            if (!(roundWind == pm.playerStatus.RoundWind && seatWind == pm.playerStatus.SeatWind))
+            {
+                return;
+            }
+            if (isSuccess)
+            {
+                isDraggable = false;
+                Debug.Log($"OnTileClick: Tile {gameObject.name} clicked. Discard successful.");
+                startParent = transform.parent.gameObject;
+            }
+            else
+            {
+                Debug.Log($"OnTileClick: Tile {gameObject.name} clicked, but discard failed.");
+                ResetPosition();
+            }
+        }));
+    }
+
 
     public void StartDrag()
     {
         if (!isDraggable) return;
 
+        if (!pm)
+            pm = playerManager.GetComponent<PlayerManager>();
+
+        if (pm == null || !pm.CheckIfPlayerTurn()) return;
+
         Debug.Log($"StartDrag: Dragging started for {gameObject.name}");
+
         isDragging = true;
         startParent = transform.parent.gameObject;
         siblingIndex = transform.GetSiblingIndex();
         startPosition = transform.position;
+
+        // 중심점 위치와 마우스 클릭 위치의 차이를 offset으로 설정
+        Vector2 centerPosition = RectTransformUtility.WorldToScreenPoint(null, transform.position);
+        offset = centerPosition - (Vector2)Input.mousePosition;
+
+        Debug.Log($"StartDrag: Calculated offset = {offset}");
     }
 
     public void EndDrag()
     {
-        if (!isDraggable) return;
+        if (!isDraggable)
+        {
+            isDragging = false;
+            return;
+        }
+        if (!pm)
+            pm = playerManager.GetComponent<PlayerManager>();
+        if (pm == null || !pm.CheckIfPlayerTurn())
+        {
+            isDragging = false;
+            return;
+        }
 
         Debug.Log($"EndDrag: Dragging ended for {gameObject.name}");
-        isDragging = false;
 
         if (transform.position.y >= discardThresholdY)
         {
-            isDraggable = false;
-            Debug.Log($"Tile {gameObject.name} dropped above discard threshold. Discarding...");
-            HandleTileDiscard();
+            Debug.Log($"Tile {gameObject.name} dropped above discard threshold. Attempting to discard...");
+
+            // 비동기적으로 HandleTileDiscard 호출
+            Wind roundWind = pm.playerStatus.RoundWind;
+            Wind seatWind = pm.playerStatus.SeatWind;
+            StartCoroutine(HandleTileDiscardCoroutine((isSuccess) =>
+            {
+                if (!(roundWind == pm.playerStatus.RoundWind && seatWind == pm.playerStatus.SeatWind))
+                {
+                    Destroy(gameObject);
+                    return;
+                }
+                if (isSuccess)
+                {
+                    isDraggable = false;
+                    Debug.Log($"OnTileClick: Tile {gameObject.name} clicked. Discard successful.");
+                    startParent = transform.parent.gameObject;
+                }
+                else
+                {
+                    Debug.Log($"OnTileClick: Tile {gameObject.name} clicked, but discard failed.");
+                    ResetPosition();
+                }
+            }));
         }
         else
         {
             Debug.Log($"Tile {gameObject.name} dropped below discard threshold. Resetting position.");
             ResetPosition();
         }
+
+        isDragging = false;
     }
+
 
     private void ResetPosition()
     {
         Debug.Log($"ResetPosition: Resetting {gameObject.name} to original position.");
-        transform.SetParent(Canvas.transform, true);
+        //transform.SetParent(Canvas.transform, true);
         transform.SetParent(startParent.transform, false);
         transform.SetSiblingIndex(siblingIndex);
+        TileGrid tileGrid = startParent.GetComponent<TileGrid>();
+        tileGrid.UpdateLayoutByIndex();
     }
 
     public void OnHoverEnter()
     {
-        if (!isDraggable) return;
+        Debug.Log($"[OnHoverEnter] isDraggable: {isDraggable}, isDragging: {isDragging}");
+        Debug.Log($"[OnHoverEnter] PlayerIndex: {pm.PlayerIndex}, IsPlayerTurn: {pm.playerStatus.IsPlayerTurn}");
+        if (!isDraggable || isDragging) return;
+        if (!pm)
+            pm = playerManager.GetComponent<PlayerManager>();
+        if (pm == null || !pm.CheckIfPlayerTurn()) return;
 
         Debug.Log($"OnHoverEnter: Mouse entered over {gameObject.name}");
-        originalPosition = transform.position;
+        startParent = transform.parent.gameObject;
         siblingIndex = transform.GetSiblingIndex();
-        transform.position = new Vector3(originalPosition.x, originalPosition.y + 10 * Screen.height / 1920f, originalPosition.z);
+        startPosition = transform.position;
+        transform.position = new Vector3(startPosition.x, startPosition.y + 10 * Screen.width / 1920f, startPosition.z);
     }
 
     public void OnHoverExit()
     {
-        if (!isDraggable || isHoveringEnd) return;
+        if (!isDraggable || isHoveringEnd || isDragging) return;
+        if (!pm)
+            pm = playerManager.GetComponent<PlayerManager>();
+        if (pm == null || !pm.CheckIfPlayerTurn()) return;
 
         Debug.Log($"OnHoverExit: Mouse exited from {gameObject.name}");
-        transform.position = originalPosition;
-        transform.SetSiblingIndex(siblingIndex);
+        ResetPosition();
     }
+
+    public void SetUndraggable()
+    {
+        isDraggable = false;
+    }
+
+
+
+    private IEnumerator HandleTileDiscardCoroutine(Action<bool> callback)
+    {
+        Debug.Log($"HandleTileDiscard: Handling discard logic for {gameObject.name}");
+
+        if (!pm)
+            pm = playerManager.GetComponent<PlayerManager>();
+        if (pm == null)
+        {
+            Debug.LogError("HandleTileDiscard: PlayerManager is null.");
+            callback?.Invoke(false);
+            yield break;
+        }
+
+        if (!TileDictionary.StringToNum.TryGetValue(gameObject.name.Substring(0, 2), out int tileId))
+        {
+            Debug.LogError("HandleTileDiscard: Failed to get tile ID.");
+            callback?.Invoke(false);
+            yield break;
+        }
+
+        // 비동기적으로 유효성 검사 실행
+        bool isValid = false;
+        yield return StartCoroutine(pm.CheckVaildDiscardAsync(tileId, result =>
+        {
+            isValid = result;
+        }));
+
+        if (!isValid)
+        {
+            Debug.Log($"HandleTileDiscard: Invalid discard for {TileDictionary.NumToString[tileId]}");
+            callback?.Invoke(false);
+            yield break;
+        }
+
+        // Get the parent GameObject
+        GameObject parentObject = startParent;
+        if (parentObject == null)
+        {
+            Debug.LogError("HandleTileDiscard: Parent object not found.");
+            callback?.Invoke(false);
+            yield break;
+        }
+
+        // Get the TileGrid component from the parent
+        TileGrid tileGrid = parentObject.GetComponent<TileGrid>();
+        if (tileGrid == null)
+        {
+            Debug.LogError("HandleTileDiscard: TileGrid component not found on parent object.");
+            callback?.Invoke(false);
+            yield break;
+        }
+
+        tileGrid.DiscardSelectedTile(gameObject);
+        Debug.Log($"HandleTileDiscard: DiscardSelectedTile called on parent TileGrid for {gameObject.name}");
+        callback?.Invoke(true);
+    }
+
 
     void Update()
     {
         if (isDragging)
         {
-            transform.position = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-            Debug.Log($"Update: Dragging {gameObject.name} to position {transform.position}");
+            Vector2 newPosition = (Vector2)Input.mousePosition + offset;
+            transform.position = newPosition;
+            //Debug.Log($"Update: Dragging {gameObject.name} to position {transform.position}");
         }
-    }
-
-    private void HandleTileDiscard()
-    {
-        Debug.Log($"HandleTileDiscard: Handling discard logic for {gameObject.name}");
-        // TODO: Implement local discard logic here (e.g., removing from player's hand, updating UI).
     }
 }

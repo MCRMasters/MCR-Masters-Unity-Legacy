@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 976875582202062757}
   - component: {fileID: -1338763413020423415}
   - component: {fileID: -1794056543559264690}
-  - component: {fileID: 6913829967094639166}
+  - component: {fileID: -5074986494326811611}
   m_Layer: 0
   m_Name: EnemyKawaToi
   m_TagString: Untagged
@@ -35,11 +35,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -139}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: -150, y: 11}
   m_SizeDelta: {x: 300, y: 300}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 1}
 --- !u!222 &1004145327586021622
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -128,7 +128,7 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
---- !u!114 &6913829967094639166
+--- !u!114 &-5074986494326811611
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -137,18 +137,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 3039137431739947073}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8a8695521f0d02e499659fee002a26c2, type: 3}
+  m_Script: {fileID: 11500000, guid: 886a2fe6db8918640b9de9ab40dcc55d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Padding:
-    m_Left: 0
-    m_Right: 0
-    m_Top: 0
-    m_Bottom: 0
-  m_ChildAlignment: 0
-  m_StartCorner: 0
-  m_StartAxis: 0
-  m_CellSize: {x: 50, y: 75}
-  m_Spacing: {x: 0, y: 0}
-  m_Constraint: 1
-  m_ConstraintCount: 6
+  columns: 6
+  cellWidth: 50
+  cellHeight: 60
+  spacingX: 0
+  spacingY: 0
+  additionalSpacingX: 0
+  playerManager: {fileID: 0}

@@ -13,7 +13,7 @@ public class LobbyUI : MonoBehaviour
         // 서버에서 실행 시 로직 무시
         if (!NetworkClient.active)
         {
-            Debug.LogWarning("LobbyUI: This script is intended to run on the client.");
+            Debug.Log("LobbyUI: This script is intended to run on the client. Here is Server.");
             return;
         }
 
@@ -39,6 +39,15 @@ public class LobbyUI : MonoBehaviour
 
         // 초기 버튼 상태 설정
         UpdateButtonUI(false);
+    }
+
+    void Update()
+    {
+        // 'R' 또는 'Space' 키가 눌리면 OnReadyButtonClicked 호출
+        if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Space))
+        {
+            OnReadyButtonClicked();
+        }
     }
 
     public void OnReadyButtonClicked()

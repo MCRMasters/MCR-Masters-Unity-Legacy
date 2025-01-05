@@ -30,6 +30,106 @@ public class ServerManager : NetworkBehaviour
     private bool gameStarted = false;
 
 
+
+    private void ProceedNextTurn(int playerWindIndex)
+    {
+        if (tileDrawIndexRight - tileDrawIndexLeft < 0)
+        {
+            Debug.Log($"[ProceedNextTurn] Player {playerWindIndex}: No more tiles to draw.");
+            StartCoroutine(StartNewRoundCoroutine());
+            return;
+        }
+        Debug.Log($"[ProceedNextTurn] Starting turn for playerWindIndex: {playerWindIndex}, playerIndex: {PlayerManagers[playerWindIndex].PlayerIndex}");
+
+
+        PlayerManagers[playerWindIndex].SetPlayerTurn(false);
+        playerWindIndex = (playerWindIndex + 1) % MaxPlayers;
+        PlayerManagers[playerWindIndex].SetPlayerTurn(true);
+
+        Debug.Log($"[ProceedNextTurn] Next turn for playerWindIndex: {playerWindIndex}, playerIndex: {PlayerManagers[playerWindIndex].PlayerIndex}");
+
+        var drawnTiles = DrawTiles(1);
+        if (drawnTiles == null || drawnTiles.Count == 0)
+        {
+            Debug.Log($"[ProceedNextTurn] Player {playerWindIndex}: No more tiles to draw.");
+            StartCoroutine(StartNewRoundCoroutine());
+            return;
+        }
+
+        // TsumoOneTile 호출
+        int tile = drawnTiles[0];
+        Debug.Log($"[ProceedNextTurn] Player {playerWindIndex} drew tile: {TileDictionary.NumToString[tile]}");
+
+        int tsumoResult = handList[playerWindIndex].TsumoOneTile(tile);
+        if (tsumoResult != 0)
+        {
+            Debug.LogError($"[ProceedNextTurn] Player {playerWindIndex}: Failed to tsumo tile {tile}. TsumoResult: {tsumoResult}");
+            return;
+        }
+
+        // Tsumo 호출 (TargetPerformTsumo 사용)
+        Debug.Log($"[ProceedNextTurn] Sending Tsumo tile {TileDictionary.NumToString[tile]} to Player {playerWindIndex}.");
+        PlayerManagers[playerWindIndex].TargetTsumoTile(PlayerManagers[playerWindIndex].connectionToClient, tile, PlayerManagers[playerWindIndex].PlayerIndex);
+
+        Debug.Log($"[ProceedNextTurn] Player {playerWindIndex} (PlayerIndex {PlayerManagers[playerWindIndex].PlayerIndex}, Isturn: {PlayerManagers[playerWindIndex].playerStatus.IsPlayerTurn})successfully tsumoed tile: {TileDictionary.NumToString[tile]}.");
+    }
+
+    private void CheckCall(int tileId, int playerWindIndex)
+    {
+        Debug.Log($"[CheckCall] Checking call for Player {playerWindIndex} with tileId: {tileId}");
+
+        // need to add call checking logic
+        if (true) // Replace with actual logic
+        {
+            Debug.Log($"[CheckCall] No call or hu. Adding tile {TileDictionary.NumToString[tileId]} to kawa for Player {playerWindIndex}.");
+            kawaTilesList[playerWindIndex].Add(tileId);
+            ProceedNextTurn(playerWindIndex);
+        }
+        else
+        {
+            Debug.Log($"[CheckCall] Call logic for Player {playerWindIndex} will be implemented here.");
+        }
+    }
+
+    private void DoDiscard(int tileId, int playerWindIndex)
+    {
+        Debug.Log($"[DoDiscard] Player {playerWindIndex} discarding tile {TileDictionary.NumToString[tileId]}.");
+
+        handList[playerWindIndex].DiscardOneTile(tileId);
+        Debug.Log($"[DoDiscard] Updated hand for Player {playerWindIndex}. Remaining count for tileId {tileId}: {handList[playerWindIndex].ClosedTiles[tileId]}.");
+
+        CheckCall(tileId, playerWindIndex);
+    }
+
+    public int IsVaildDiscard(int tileID, int PlayerIndex)
+    {
+        Debug.Log($"[IsVaildDiscard] Validating discard for tileID {tileID} by PlayerIndex {PlayerIndex}.");
+
+        for (int i = 0; i < playerIndices.Length; i++)
+        {
+            if (playerIndices[i] == PlayerIndex)
+            {
+                Debug.Log($"[IsVaildDiscard] Found matching PlayerIndex at index {i}.");
+
+                if (handList[i].ClosedTiles[tileID] > 0)
+                {
+                    Debug.Log($"[IsVaildDiscard] Valid discard. Tile count for tileID {tileID}: {handList[i].ClosedTiles[tileID]}.");
+                    DoDiscard(tileID, i);
+                    return 1;
+                }
+                else
+                {
+                    Debug.LogError($"[IsVaildDiscard] Invalid discard. No tiles left for tileID {tileID}.");
+                    return 0;
+                }
+            }
+        }
+
+        Debug.LogError($"[IsVaildDiscard] No matching PlayerIndex found for {PlayerIndex}.");
+        return 0;
+    }
+
+
     public int GetActivePlayerCount()
     {
         return activePlayerCount;
@@ -221,99 +321,74 @@ public class ServerManager : NetworkBehaviour
         Debug.Log("Players first seat:");
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
-            Debug.Log($"Index {i}: Player {PlayerManagers[i].PlayerName} - Wind: {PlayerManagers[i].PlayerStatus.SeatWind}");
+            Debug.Log($"Index {i}: Player {PlayerManagers[i].PlayerName}, PlayerIndex {PlayerManagers[i].PlayerIndex} - Wind: {PlayerManagers[i].playerStatus.SeatWind}");
         }
-        for (int i = 0; i < 17; ++i)
-        {
-            StartNewRound();
-            // test debug code for fisrt round
-            return;
-        }
+        //for (int i = 0; i < 17; ++i)
+        //{
+        //    StartNewRound();
+        //    // test debug code for fisrt round
+        //    return;
+        //}
+        StartCoroutine(StartNewRoundCoroutine());
     }
 
 
 
-    public void StartNewRound()
+    public IEnumerator StartNewRoundCoroutine()
     {
         if (CurrentRound >= 16)
         {
             Debug.Log("Game over. All rounds completed.");
-            return;
+            yield break;
         }
+
         CurrentRound++;
         if (CurrentRound > 1 && CurrentRound % 4 == 1)
         {
             RoundWind++;
         }
+
         if (CurrentRound > 1)
         {
             AdjustPositionsBeforeRound();
         }
+
         BroadcastPlayerIndices();
 
         Debug.Log($"New round started: Round {CurrentRound}, Wind: {RoundWind}");
+
+        // to avoid representing last discarded tile from the previous round
+        yield return new WaitForSeconds(0.1f);
+        yield return InitializePlayersCoroutine();
+
         InitializeTiles();
         ShuffleTiles();
+        
+
         DealTilesToPlayers();
-        int currentPlayerIndex = 0;
 
-        // test debug code for fisrt round
-        return;
+        Debug.Log("Initialization of players completed. Proceeding to next turn.");
+        ProceedNextTurn(3);
+    }
 
-        while (CanDrawTile())
+    private IEnumerator InitializePlayersCoroutine()
+    {
+        for (int i = 0; i < PlayerManagers.Length; i++)
         {
-            // 타일 뽑기
-            var drawnTiles = DrawTiles(1);
-            if (drawnTiles == null || drawnTiles.Count == 0)
+            if (PlayerManagers[i] == null)
             {
-                Debug.LogWarning($"Player {currentPlayerIndex}: No more tiles to draw.");
-                break;
+                Debug.LogError($"PlayerManager at index {i} is null.");
+                continue;
             }
+            PlayerManagers[i].SetInitializeFlagFalse();
+            Debug.Log($"Passing initialization data to PlayerManager[{i}].");
+            PlayerManagers[i].InitializePlayerOnClient(Wind.EAST + i, RoundWind);
 
-            // TsumoOneTile 호출
-            int tile = drawnTiles[0];
-            int tsumoResult = handList[currentPlayerIndex].TsumoOneTile(tile);
-            if (tsumoResult != 0)
-            {
-                Debug.LogError($"Player {currentPlayerIndex}: Failed to tsumo tile {tile}.");
-                return;
-            }
-
-            // Tsumo 호출 (TargetPerformTsumo 사용)
-            PlayerManagers[currentPlayerIndex].TargetPerformTsumo(PlayerManagers[currentPlayerIndex].connectionToClient, tile);
-
-
-            Debug.Log($"Player {currentPlayerIndex} tsumoed tile: {TileDictionary.NumToString[tile]}.");
-
-            // WinningTile을 참조하여 타일 버리기
-            int winningTile = handList[currentPlayerIndex].WinningTile;
-
-
-            if (winningTile == -1)
-            {
-                Debug.LogError($"Player {currentPlayerIndex}: No WinningTile to discard.");
-                return;
-            }
-
-
-            int discardResult = handList[currentPlayerIndex].DiscardOneTile(winningTile);
-            if (discardResult != 0)
-            {
-                Debug.LogError($"Player {currentPlayerIndex}: Failed to discard tile {winningTile}.");
-                currentPlayerIndex = (currentPlayerIndex + 1) % 4; // 다음 플레이어로 이동
-                return;
-            }
-
-            // 버려진 타일을 kawaTilesList에 추가
-            kawaTilesList[currentPlayerIndex].Add(winningTile);
-            Debug.Log($"Player {currentPlayerIndex} discarded tile: {TileDictionary.NumToString[winningTile]}.");
-
-            PlayerManagers[currentPlayerIndex].SetPlayerTurn(false);
-            // 다음 플레이어로 이동
-            currentPlayerIndex = (currentPlayerIndex + 1) % 4;
-            PlayerManagers[currentPlayerIndex].SetPlayerTurn(true);
+            // 클라이언트 쪽 초기화 완료를 대기
+            yield return new WaitUntil(() => PlayerManagers[i].IsInitializationComplete());
         }
     }
+
 
 
     private void AdjustPositionsBeforeRound()
@@ -357,13 +432,13 @@ public class ServerManager : NetworkBehaviour
         }
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
-            PlayerManagers[i].PlayerStatus.SeatWind = i + Wind.EAST;
+            PlayerManagers[i].playerStatus.SeatWind = i + Wind.EAST;
         }
 
         Debug.Log("Player positions adjusted after round and reassigned.");
         for (int i = 0; i < PlayerManagers.Length; i++)
         {
-            Debug.Log($"Index {i}: Player {PlayerManagers[i].PlayerName} - Wind: {PlayerManagers[i].PlayerStatus.SeatWind}");
+            Debug.Log($"Index {i}: Player {PlayerManagers[i].PlayerName} - Wind: {PlayerManagers[i].playerStatus.SeatWind}");
         }
     }
 
@@ -373,12 +448,13 @@ public class ServerManager : NetworkBehaviour
         handList = new Hand[MaxPlayers];
         kawaTilesList = new List<int>[MaxPlayers];
         tileDrawIndexLeft = 0;
-        tileDrawIndexRight = TotalTiles - 1;
+        //tileDrawIndexRight = TotalTiles - 1;
         for (int i = 0; i < MaxPlayers; i++)
         {
             handList[i] = new Hand();
             kawaTilesList[i] = new();
         }
+        //for (int tileNum = 0; tileNum < 13; tileNum++)
         for (int tileNum = 0; tileNum < 34; tileNum++)
         {
             for (int i = 0; i < 4; i++)
@@ -391,7 +467,7 @@ public class ServerManager : NetworkBehaviour
         {
             tileDeck.Add(34); // 0f tiles
         }
-
+        tileDrawIndexRight = tileDeck.Count - 1;
         Debug.Log("Tile deck initialized with " + tileDeck.Count + " tiles.");
     }
 
@@ -429,11 +505,6 @@ public class ServerManager : NetworkBehaviour
         return drawnTiles;
     }
 
-
-    public void PlayerDiscardTile(PlayerManager playerManager, int tile)
-    {
-
-    }
 
 
     private void DealTilesToPlayers()

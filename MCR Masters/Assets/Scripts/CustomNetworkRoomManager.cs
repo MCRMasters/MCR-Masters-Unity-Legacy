@@ -36,18 +36,6 @@ public class CustomNetworkRoomManager : NetworkRoomManager
     {
         // 기본 플레이어 객체 생성
         base.OnServerAddPlayer(conn);
-
-        // 새로 생성된 플레이어 객체의 PlayerManager를 추출
-        var playerManager = conn.identity.GetComponent<PlayerManager>();
-        if (playerManager != null)
-        {
-            playerManagers.Add(playerManager);
-            Debug.Log($"Player added: ConnectionId = {conn.connectionId}, PlayerName = {playerManager.PlayerName}");
-        }
-        else
-        {
-            Debug.LogWarning($"Player added but no PlayerManager found for ConnectionId = {conn.connectionId}");
-        }
     }
 
 

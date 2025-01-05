@@ -35,11 +35,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 851.01984, y: 386.2498}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 801.01984, y: 461.2498}
   m_SizeDelta: {x: 100, y: 150}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 1}
 --- !u!222 &6586536951350212266
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -153,13 +153,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19b346c50994a5341a12a2006a91a42d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  syncDirection: 0
-  syncMode: 0
-  syncInterval: 0
   Canvas: {fileID: 0}
   PlayerHaipai: {fileID: 0}
   playerManager: {fileID: 0}
-  TilePrefabArray: []
-  EnemyKawaShimo: {fileID: 0}
-  EnemyKawaKami: {fileID: 0}
-  EnemyKawaToi: {fileID: 0}

@@ -41,24 +41,25 @@ namespace Game.Shared
         }
     }
 
-    public class PlayerStatus
+    [System.Serializable]
+    public struct PlayerStatus
     {
-        public int CurrentScore { get; set; }
-        public Wind SeatWind { get; set; }
-        public Wind RoundWind { get; set; }
-        public bool IsPlayerTurn { get; set; }
-
-        public PlayerStatus()
-        {
-            CurrentScore = 0;
-            SeatWind = Wind.EAST;
-            RoundWind = Wind.EAST;
-            IsPlayerTurn = false;
-        }
+        public int CurrentScore;
+        public Wind SeatWind;
+        public Wind RoundWind;
+        public bool IsPlayerTurn;
 
         public PlayerStatus(Wind seatWind, Wind roundWind)
         {
             CurrentScore = 0;
+            SeatWind = seatWind;
+            RoundWind = roundWind;
+            IsPlayerTurn = (seatWind == Wind.EAST);
+        }
+
+        public PlayerStatus(int currentScore, Wind seatWind, Wind roundWind)
+        {
+            CurrentScore = currentScore;
             SeatWind = seatWind;
             RoundWind = roundWind;
             IsPlayerTurn = (seatWind == Wind.EAST);
@@ -240,6 +241,7 @@ namespace Game.Shared
 
             if (TilesLeftToDraw != 1 || TileOutOfRange(tile))
             {
+                PrintHandNames();
                 Debug.LogError("[TsumoOneTile] Invalid tsumo operation.");
                 return -1;
             }
@@ -267,6 +269,7 @@ namespace Game.Shared
             var winningTileName = WinningTile >= 0 && WinningTile < TileDictionary.NumToString.Count ? TileDictionary.NumToString[WinningTile] : "None";
 
             Debug.Log($"[PrintHandNames] Closed Tiles: {closedTilesNames}\n[PrintHandNames] Opened Tiles: {openedTilesNames}\nFlower Points: {FlowerPoint}\nWinning Tile: {winningTileName}");
+            Debug.Log($"Tiles Left to Draw: {TilesLeftToDraw}");
         }
 
     }
