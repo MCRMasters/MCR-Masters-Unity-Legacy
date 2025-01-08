@@ -16,6 +16,7 @@ using Unity.VisualScripting;
 using System.Xml;
 using Mirror.BouncyCastle.Security.Certificates;
 using UnityEngine.Tilemaps;
+using System.Runtime.InteropServices;
 
 public class PlayerManager : NetworkBehaviour
 {
@@ -156,11 +157,6 @@ public class PlayerManager : NetworkBehaviour
 
     }
 
-    private void PerformFlower(ActionPriorityInfo action, int sourceTileId, int playerIndex)
-    {
-        // discard랑 비슷하게 화패를 제거하고 쯔테를 보여줌
-        // 
-    }
 
     private void ExecuteAction(ActionPriorityInfo action, int sourceTileId, int playerIndex)
     {
@@ -981,7 +977,10 @@ public class PlayerManager : NetworkBehaviour
         }
 
         Debug.Log($"Kawa Name: {kawaPrefab.name}, Components: {string.Join(", ", kawaPrefab.GetComponents<Component>().Select(c => c.GetType().Name))}");
-
+        if (IsTsumoTile)
+        {
+            SetTileColorToGray(spawnedTile);
+        }
         // TileGrid에 타일 추가
         TileGrid tileGrid = kawaPrefab.GetComponent<TileGrid>();
         if (tileGrid == null)
@@ -990,10 +989,47 @@ public class PlayerManager : NetworkBehaviour
             onComplete?.Invoke();
             yield break;
         }
-
+        
         tileGrid.AddTileToLastIndex(spawnedTile);
         Debug.Log($"Tile {spawnedTile.name} successfully added to {kawaPrefab.name}.");
         onComplete?.Invoke(); // 작업 완료 알림
+    }
+
+    private void SetTileColorToGray(GameObject tile)
+    {
+        if (tile == null)
+        {
+            Debug.LogWarning("[SetTileColorToGray] Tile GameObject is null. Skipping color adjustment.");
+            return;
+        }
+
+        // Renderer로 처리 (3D Object)
+        Renderer renderer = tile.GetComponent<Renderer>();
+        if (renderer != null)
+        {
+            foreach (Material material in renderer.materials)
+            {
+                if (material.HasProperty("_Color"))
+                {
+                    // 회색 (회색 RGB: 0.6, 0.6, 0.6)
+                    material.color = new Color(0.6f, 0.6f, 0.6f, material.color.a);
+                }
+            }
+            Debug.Log("[SetTileColorToGray] Applied gray color to Renderer.");
+            return;
+        }
+
+        // Image로 처리 (UI Object)
+        UnityEngine.UI.Image image = tile.GetComponent<UnityEngine.UI.Image>();
+        if (image != null)
+        {
+            // 약간 회색
+            image.color = new Color(0.8f, 0.8f, 0.8f, image.color.a);
+            Debug.Log("[SetTileColorToGray] Applied gray color to UI Image.");
+            return;
+        }
+
+        Debug.LogWarning("[SetTileColorToGray] No Renderer or UI Image found on tile. Skipping color adjustment.");
     }
 
     private GameObject CreateButton(GameObject prefab, Transform parent, string buttonType)

@@ -36,7 +36,7 @@ namespace DataTransfer
     }
 
     // BlockData 구조체
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct BlockData
     {
         public int Type;               // BlockType (enum -> int)
@@ -46,15 +46,15 @@ namespace DataTransfer
     }
 
     // WinningConditionData 구조체
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct WinningConditionData
     {
         public int WinningTile;             // Winning 타일 ID
-        public bool IsDiscarded;            // 버려진 타일 여부
-        public bool IsLastTileInTheGame;    // 마지막 타일 여부
-        public bool IsLastTileOfItsKind;    // 해당 종류의 마지막 타일 여부
-        public bool IsReplacementTile;      // 대체 타일 여부
-        public bool IsRobbingTheKong;       // Robbing the Kong 여부
+        public int IsDiscarded;            // 버려진 타일 여부
+        public int IsLastTileInTheGame;    // 마지막 타일 여부
+        public int IsLastTileOfItsKind;    // 해당 종류의 마지막 타일 여부
+        public int IsReplacementTile;      // 대체 타일 여부
+        public int IsRobbingTheKong;       // Robbing the Kong 여부
         public int RoundWind;
         public int SeatWind;
 
@@ -67,7 +67,7 @@ namespace DataTransfer
     }
 
     // HandData 구조체
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct HandData
     {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 35)]
@@ -151,11 +151,11 @@ namespace DataTransfer
             return new WinningConditionData
             {
                 WinningTile = condition.WinningTile,
-                IsDiscarded = condition.IsDiscarded,
-                IsLastTileInTheGame = condition.IsLastTileInTheGame,
-                IsLastTileOfItsKind = condition.IsLastTileOfItsKind,
-                IsReplacementTile = condition.IsReplacementTile,
-                IsRobbingTheKong = condition.IsRobbingTheKong,
+                IsDiscarded = condition.IsDiscarded ? 1 : 0,
+                IsLastTileInTheGame = condition.IsLastTileInTheGame ? 1 : 0,
+                IsLastTileOfItsKind = condition.IsLastTileOfItsKind ? 1 : 0,
+                IsReplacementTile = condition.IsReplacementTile ? 1 : 0,
+                IsRobbingTheKong = condition.IsRobbingTheKong ? 1 : 0,
                 RoundWind = roundWind,
                 SeatWind = seatWind
             };
@@ -255,11 +255,11 @@ namespace DataTransfer
             return new WinningConditionData
             {
                 WinningTile = condition.WinningTile,
-                IsDiscarded = condition.IsDiscarded,
-                IsLastTileInTheGame = condition.IsLastTileInTheGame,
-                IsLastTileOfItsKind = condition.IsLastTileOfItsKind,
-                IsReplacementTile = condition.IsReplacementTile,
-                IsRobbingTheKong = condition.IsRobbingTheKong
+                IsDiscarded = condition.IsDiscarded ? 1 : 0,
+                IsLastTileInTheGame = condition.IsLastTileInTheGame ? 1 : 0,
+                IsLastTileOfItsKind = condition.IsLastTileOfItsKind ? 1 : 0,
+                IsReplacementTile = condition.IsReplacementTile ? 1 : 0,
+                IsRobbingTheKong = condition.IsRobbingTheKong ? 1 : 0
             };
         }
 

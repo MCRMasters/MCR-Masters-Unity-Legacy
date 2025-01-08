@@ -362,6 +362,8 @@ public class ServerManager : NetworkBehaviour
         }
         return resultList;
     }
+
+    // TODO: need to add
     private List<ActionPriorityInfo> GetPossibleKanChoices(int tileId, int playerWindIndex)
     {
         List<ActionPriorityInfo> resultList = new List<ActionPriorityInfo>();
@@ -369,9 +371,20 @@ public class ServerManager : NetworkBehaviour
         {
             return resultList;
         }
-        if (handList[playerWindIndex].ClosedTiles[tileId] >= 3)
+        if (winningCondition.IsDiscarded)
         {
-            resultList.Add(new ActionPriorityInfo(ActionType.KAN, GetPriorityFromWind(playerWindIndex), tileId));
+            if (handList[playerWindIndex].ClosedTiles[tileId] >= 3)
+            {
+                resultList.Add(new ActionPriorityInfo(ActionType.KAN, GetPriorityFromWind(playerWindIndex), tileId));
+            }
+        }
+        else
+        {
+            if (handList[playerWindIndex].ClosedTiles[tileId] >= 4)
+            {
+                resultList.Add(new ActionPriorityInfo(ActionType.KAN, GetPriorityFromWind(playerWindIndex), tileId));
+            }
+            // shominkan
         }
         return resultList;
     }
@@ -638,6 +651,7 @@ public class ServerManager : NetworkBehaviour
         if (tileId >= 0 && tileId < 34)
         {
             visibleTileCounts[tileId]++;
+            Debug.Log($"tile count for {TileDictionary.NumToString[tileId]}: {visibleTileCounts[tileId]}");
             if (visibleTileCounts[tileId] == 4)
             {
                 winningCondition.IsLastTileOfItsKind = true;
@@ -908,12 +922,12 @@ public class ServerManager : NetworkBehaviour
         yield return new WaitForSeconds(0.1f);
         
         ShuffleTiles();
-        
-        
-        DealTilesToPlayers();
+
+
+        //DealTilesToPlayers();
 
         // Warning: Test Function!!
-        //DealTilesToPlayersTest();
+        DealTilesToPlayersTest();
         // 
         Debug.Log("Initialization of players completed. Proceeding to next turn.");
         ProceedNextTurn(3);
@@ -1006,8 +1020,8 @@ public class ServerManager : NetworkBehaviour
             kawaTilesList[i] = new();
             visibleTileCounts[i] = 0;
         }
-        //for (int tileNum = 0; tileNum < 9; tileNum++)
-        for (int tileNum = 0; tileNum < 34; tileNum++)
+        for (int tileNum = 0; tileNum < 9; tileNum++)
+        //for (int tileNum = 0; tileNum < 34; tileNum++)
         {
             for (int i = 0; i < 4; i++)
             {
