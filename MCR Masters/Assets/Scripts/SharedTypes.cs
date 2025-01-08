@@ -1,9 +1,99 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace Game.Shared
 {
+
+
+    public static class YakuDictionary
+    {
+        public static readonly Dictionary<int, string> dict = new Dictionary<int, string>
+        {
+            { 0, "Chicken Hand" },
+            { 1, "Chained Seven Pairs" },
+            { 2, "Thirteen Orphans" },
+            { 3, "Big Four Winds" },
+            { 4, "Big Three Dragons" },
+            { 5, "Nine Gates" },
+            { 6, "All Green" },
+            { 7, "Four Quads" },
+            { 8, "Four Concealed Pungs" },
+            { 9, "All Terminals" },
+            { 10, "Little Four Winds" },
+            { 11, "Little Three Dragons" },
+            { 12, "All Honors" },
+            { 13, "Pure Terminal Chows" },
+            { 14, "Quadruple Chow" },
+            { 15, "Four Pure Shifted Pungs" },
+            { 16, "Four Pure Shifted Chows" },
+            { 17, "Three Kongs" },
+            { 18, "All Terminals And Honors" },
+            { 19, "Seven Pairs" },
+            { 20, "Greater Honors And Knitted Tiles" },
+            { 21, "All Even Pungs" },
+            { 22, "Full Flush" },
+            { 23, "Upper Tiles" },
+            { 24, "Middle Tiles" },
+            { 25, "Lower Tiles" },
+            { 26, "Pure Triple Chow" },
+            { 27, "Pure Shifted Pungs" },
+            { 28, "Pure Straight" },
+            { 29, "Three Suited Terminal Chows" },
+            { 30, "Pure Shifted Chows" },
+            { 31, "All Fives" },
+            { 32, "Triple Pung" },
+            { 33, "Three Concealed Pungs" },
+            { 34, "Lesser Honors And Knitted Tiles" },
+            { 35, "Knitted Straight" },
+            { 36, "Upper Four" },
+            { 37, "Lower Four" },
+            { 38, "Big Three Winds" },
+            { 39, "Last Tile Draw" },
+            { 40, "Last Tile Claim" },
+            { 41, "Out With Replacement Tile" },
+            { 42, "Robbing The Kong" },
+            { 43, "Mixed Straight" },
+            { 44, "Mixed Triple Chow" },
+            { 45, "Reversible Tiles" },
+            { 46, "Mixed Shifted Pungs" },
+            { 47, "Two Concealed Kongs" },
+            { 48, "Melded Hand" },
+            { 49, "Mixed Shifted Chows" },
+            { 50, "All Pungs" },
+            { 51, "Half Flush" },
+            { 52, "All Types" },
+            { 53, "Two Dragons" },
+            { 54, "Fully Concealed Hand" },
+            { 55, "Last Tile" },
+            { 56, "Outside Hand" },
+            { 57, "Two Melded Kongs" },
+            { 58, "Concealed Hand" },
+            { 59, "Dragon Pung" },
+            { 60, "Prevalent Wind" },
+            { 61, "Seat Wind" },
+            { 62, "All Chows" },
+            { 63, "Double Pung" },
+            { 64, "Two Concealed Pungs" },
+            { 65, "Tile Hog" },
+            { 66, "Concealed Kong" },
+            { 67, "All Simples" },
+            { 68, "Pure Double Chow" },
+            { 69, "Mixed Double Chow" },
+            { 70, "Short Straight" },
+            { 71, "Two Terminal Chows" },
+            { 72, "Pung Of Terminals Or Honors" },
+            { 73, "One Voided Suit" },
+            { 74, "No Honors" },
+            { 75, "Single Wait" },
+            { 76, "Melded Kong" },
+            { 77, "Self Drawn" },
+            { 78, "Edge Wait" },
+            { 79, "Closed Wait" }
+        };
+    }
+
 
     public static class TileDictionary
     {
@@ -70,6 +160,48 @@ namespace Game.Shared
             return $"Score: {CurrentScore}, SeatWind: {SeatWind}, RoundWind: {RoundWind}, IsPlayerTurn: {IsPlayerTurn}";
         }
     }
+
+    public enum ActionType 
+    { 
+        SKIP = -1,
+        HU,
+        KAN,
+        PON,
+        CHII,
+        FLOWER
+    }
+
+    public struct ActionPriorityInfo : IComparable<ActionPriorityInfo>
+    {
+        public ActionType Type;
+        public int Priority;
+        public int TileId;
+
+        public ActionPriorityInfo(ActionType type, int priority, int tileId)
+        {
+            Type = type;
+            Priority = priority;
+            TileId = tileId;
+        }
+
+        public int CompareTo(ActionPriorityInfo other)
+        {
+            // Type 기준으로 우선 정렬
+            int typeComparison = Type.CompareTo(other.Type);
+            if (typeComparison != 0)
+            {
+                return typeComparison;
+            }
+
+            // Type이 같으면 Priority 기준으로 정렬
+            return Priority.CompareTo(other.Priority);
+        }
+        public override string ToString()
+        {
+            return $"Type: {Type}, Priority: {Priority}, TileId: {TileId}";
+        }
+    }
+
 
     public enum BlockType
     {
@@ -141,11 +273,17 @@ namespace Game.Shared
         public bool IsLastTileOfItsKind;
         public bool IsReplacementTile;
         public bool IsRobbingTheKong;
-        public int CountWinningTiles;
 
-        public WinningCondition() { }
+        public WinningCondition() {
+            WinningTile = -1;
+            IsDiscarded = false;
+            IsLastTileInTheGame = false;
+            IsLastTileOfItsKind = false;
+            IsReplacementTile = false;
+            IsRobbingTheKong = false;
+        }
 
-        public WinningCondition(int winningTile, bool isDiscarded, bool isLastTileInTheGame, bool isLastTileOfItsKind, bool isReplacementTile, bool isRobbingTheKong, int countWinningTiles)
+        public WinningCondition(int winningTile, bool isDiscarded, bool isLastTileInTheGame, bool isLastTileOfItsKind, bool isReplacementTile, bool isRobbingTheKong)
         {
             WinningTile = winningTile;
             IsDiscarded = isDiscarded;
@@ -153,7 +291,6 @@ namespace Game.Shared
             IsLastTileOfItsKind = isLastTileOfItsKind;
             IsReplacementTile = isReplacementTile;
             IsRobbingTheKong = isRobbingTheKong;
-            CountWinningTiles = countWinningTiles;
         }
     }
 
@@ -179,8 +316,8 @@ namespace Game.Shared
         }
         private void Initialize()
         {
-            ClosedTiles = new List<int>(new int[35]); // 초기값 0으로 35개 생성
-            OpenedTiles = new List<int>(new int[35]); // 초기값 0으로 35개 생성
+            ClosedTiles = Enumerable.Repeat(0, 35).ToList(); // 초기값 0으로 35개 생성
+            OpenedTiles = Enumerable.Repeat(0, 35).ToList(); // 초기값 0으로 35개 생성
             CallBlocks = new List<Block>();
             YakuScoreList = new List<KeyValuePair<int, int>>();
             KeishikiTenpaiTiles = new List<int>();

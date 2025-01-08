@@ -141,7 +141,7 @@ TextureImporter:
     heightScale: 0.25
     normalMapFilter: 0
     flipGreenChannel: 0
-  isReadable: 0
+  isReadable: 1
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
@@ -1109,7 +1109,47 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      match_lobby_0: -6254845489599413436
+      match_lobby_1: -3527023791988188221
+      match_lobby_10: 7575868435269199501
+      match_lobby_11: -3433308174276260447
+      match_lobby_12: -6084139979172876818
+      match_lobby_13: -1446204874847363064
+      match_lobby_14: 7930970069587684190
+      match_lobby_15: 7516105816374006422
+      match_lobby_16: 498823374840098198
+      match_lobby_17: 8209257615155170316
+      match_lobby_18: 1858132887663550011
+      match_lobby_19: 6519860814357519912
+      match_lobby_2: 81386878271185098
+      match_lobby_20: -2654524962910659676
+      match_lobby_21: -5157473053664076514
+      match_lobby_22: -844946807821674230
+      match_lobby_23: 8239927450544315903
+      match_lobby_24: 2753094395814564400
+      match_lobby_25: -4396808866556659662
+      match_lobby_26: -9131929582999309400
+      match_lobby_27: -804329965166442451
+      match_lobby_28: -617336532288727979
+      match_lobby_29: 1728987358275966639
+      match_lobby_3: -3123703961310327526
+      match_lobby_30: -3487039596134589922
+      match_lobby_31: -8112525900006832520
+      match_lobby_32: -4869580864992114362
+      match_lobby_33: 3052228473780874439
+      match_lobby_34: -4969169715577857555
+      match_lobby_35: -3025186886415206131
+      match_lobby_36: 7564664940291040563
+      match_lobby_37: 6302405539493544385
+      match_lobby_38: -5994582903726746778
+      match_lobby_39: 3075332323218804320
+      match_lobby_4: -6812478063221895449
+      match_lobby_5: -2833676452616723739
+      match_lobby_6: -5215996004447649359
+      match_lobby_7: -3337748279642445520
+      match_lobby_8: 8791457017486180662
+      match_lobby_9: -39370824772172610
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

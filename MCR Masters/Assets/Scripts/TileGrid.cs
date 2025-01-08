@@ -368,7 +368,7 @@ public class TileGrid : MonoBehaviour
         Debug.Log($"playerManager GameObject name: {playerManager.name}");
         Debug.Log($"playerManager components: {string.Join(", ", playerManager.GetComponents<Component>().Select(c => c.GetType().Name))}");
         pm.CmdDiscardTile(tileName, isTsumoTile);
-
+        pm.DeleteButtons();
 
         Debug.Log($"The selected tile {tileName} has been discarded and the grid rearranged.");
 

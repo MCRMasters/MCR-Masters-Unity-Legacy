@@ -18,9 +18,10 @@ public class GameStatusUI : MonoBehaviour
     public bool IsUpdated = false;
 
 
+
     void Start()
     {
-        
+
     }
 
     public void Initialize()
@@ -32,7 +33,7 @@ public class GameStatusUI : MonoBehaviour
         }
         if (localPlayerManager == null)
         {
-            Debug.LogError("Local PlayerManager not found.");
+            //Debug.LogError("Local PlayerManager not found.");
             return;
         }
 
@@ -40,7 +41,7 @@ public class GameStatusUI : MonoBehaviour
         // 초기화: TextMeshPro 배열 크기 검사
         if (enemyScoresText.Length < 3 || enemySeatWindsText.Length < 3 || enemyNamesText.Length < 3)
         {
-            Debug.LogError("Enemy TextMeshProUGUI array lengths must be at least 3.");
+            //Debug.LogError("Enemy TextMeshProUGUI array lengths must be at least 3.");
             return;
         }
         IsUpdated = true;
@@ -71,7 +72,7 @@ public class GameStatusUI : MonoBehaviour
             if (enemy != localPlayerManager)
             {
                 int relativeIndex = localPlayerManager.GetRelativeIndex(enemy.PlayerIndex);
-                Debug.Log($"[GameStatusUI.Update] PlayerIndex: {localPlayerManager.PlayerIndex}, enemy name {enemy.PlayerName}, enemy index: {enemy.PlayerIndex}, relativeIndex: {relativeIndex}, enemy wind: {enemy.playerStatus.SeatWind.ToString()}");
+                //Debug.Log($"[GameStatusUI.Update] PlayerIndex: {localPlayerManager.PlayerIndex}, enemy name {enemy.PlayerName}, enemy index: {enemy.PlayerIndex}, relativeIndex: {relativeIndex}, enemy wind: {enemy.playerStatus.SeatWind.ToString()}");
                 if (relativeIndex == -1)
                 {
                     continue;
