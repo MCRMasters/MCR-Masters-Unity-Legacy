@@ -15,6 +15,7 @@ using TMPro;
 using Unity.VisualScripting;
 using System.Xml;
 using Mirror.BouncyCastle.Security.Certificates;
+using UnityEngine.Tilemaps;
 
 public class PlayerManager : NetworkBehaviour
 {
@@ -27,7 +28,7 @@ public class PlayerManager : NetworkBehaviour
     [SyncVar(hook = nameof(OnPlayerStatusChanged))]
     public PlayerStatus playerStatus;
 
-
+    private float remainingTime;
 
     private List<int> PlayerHandTiles = new();
     private List<Block> PlayerCallBlocksList = new();
@@ -55,6 +56,11 @@ public class PlayerManager : NetworkBehaviour
     public GameObject EnemyKawaKami;
     public GameObject EnemyKawaShimo;
     public GameObject[] EnemyKawaList;
+
+    public GameObject PlayerFlowerField;
+    public GameObject EnemyFlowerFieldShimo;
+    public GameObject EnemyFlowerFieldToi;
+    public GameObject EnemyFlowerFieldKami;
 
     public GameObject GameStatusUI;
 
@@ -134,6 +140,7 @@ public class PlayerManager : NetworkBehaviour
         ExecuteAction(action, sourceTileId, playerIndex);
     }
 
+    // TODO: need to be added
     private void PerformKan(ActionPriorityInfo action, int sourceTileId, int playerIndex)
     {
 
@@ -151,7 +158,8 @@ public class PlayerManager : NetworkBehaviour
 
     private void PerformFlower(ActionPriorityInfo action, int sourceTileId, int playerIndex)
     {
-
+        // discard랑 비슷하게 화패를 제거하고 쯔테를 보여줌
+        // 
     }
 
     private void ExecuteAction(ActionPriorityInfo action, int sourceTileId, int playerIndex)
@@ -166,9 +174,6 @@ public class PlayerManager : NetworkBehaviour
                 break;
             case ActionType.CHII:
                 PerformChii(action, sourceTileId, playerIndex);
-                break;
-            case ActionType.FLOWER:
-                PerformFlower(action, sourceTileId, playerIndex);
                 break;
         }
     }
@@ -215,6 +220,7 @@ public class PlayerManager : NetworkBehaviour
 
     public void DeleteButtons()
     {
+        remainingTime = -1;
         huButton = DeleteButton(huButton);
         skipButton = DeleteButton(skipButton);
         flowerButton = DeleteButton(flowerButton);
@@ -338,6 +344,11 @@ public class PlayerManager : NetworkBehaviour
             Destroy(popupObject);
             popupObject = null;
         }
+    }
+
+    public float getRemainingTime()
+    {
+        return remainingTime;
     }
 
     private IEnumerator WaitForPopupConfirmation(float popupWaitTime)
@@ -476,10 +487,112 @@ public class PlayerManager : NetworkBehaviour
         EnemyHaipaiList[1] = EnemyHaipaiToi;
         EnemyHaipaiList[2] = EnemyHaipaiKami;
 
+
+        DisableFlowerFields();
         GameStatusUI = GameObject.Find("GameStatusUI");
+
         DeleteButtons();
         InitializeButtonList();
     }
+
+    void Awake()
+    {
+        Debug.Log("[Awake] Attempting to find FlowerFields...");
+
+        PlayerFlowerField = GameObject.Find("PlayerFlowerField");
+        Debug.Log($"[Awake] PlayerFlowerField: {PlayerFlowerField?.name}");
+
+        EnemyFlowerFieldShimo = GameObject.Find("EnemyFlowerField1");
+        Debug.Log($"[Awake] EnemyFlowerFieldShimo: {EnemyFlowerFieldShimo?.name}");
+
+        EnemyFlowerFieldToi = GameObject.Find("EnemyFlowerField2");
+        Debug.Log($"[Awake] EnemyFlowerFieldToi: {EnemyFlowerFieldToi?.name}");
+
+        EnemyFlowerFieldKami = GameObject.Find("EnemyFlowerField3");
+        Debug.Log($"[Awake] EnemyFlowerFieldKami: {EnemyFlowerFieldKami?.name}");
+    }
+
+    private void DisableFlowerFields()
+    {
+        Debug.Log("[DisableFlowerFields] Function called.");
+
+        if (!isOwned)
+        {
+            Debug.Log("[DisableFlowerFields] is not owned");
+            return;
+        }
+
+        if (PlayerFlowerField != null)
+        {
+            if (PlayerFlowerField.activeSelf)
+            {
+                Debug.Log($"[DisableFlowerFields] Disabling active PlayerFlowerField: {PlayerFlowerField.name}");
+                PlayerFlowerField.SetActive(false);
+            }
+            else
+            {
+                Debug.Log($"[DisableFlowerFields] PlayerFlowerField: {PlayerFlowerField.name} is already inactive.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[DisableFlowerFields] PlayerFlowerField is null.");
+        }
+
+        if (EnemyFlowerFieldShimo != null)
+        {
+            if (EnemyFlowerFieldShimo.activeSelf)
+            {
+                Debug.Log($"[DisableFlowerFields] Disabling active EnemyFlowerFieldShimo: {EnemyFlowerFieldShimo.name}");
+                EnemyFlowerFieldShimo.SetActive(false);
+            }
+            else
+            {
+                Debug.Log($"[DisableFlowerFields] EnemyFlowerFieldShimo: {EnemyFlowerFieldShimo.name} is already inactive.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[DisableFlowerFields] EnemyFlowerFieldShimo is null.");
+        }
+
+        if (EnemyFlowerFieldToi != null)
+        {
+            if (EnemyFlowerFieldToi.activeSelf)
+            {
+                Debug.Log($"[DisableFlowerFields] Disabling active EnemyFlowerFieldToi: {EnemyFlowerFieldToi.name}");
+                EnemyFlowerFieldToi.SetActive(false);
+            }
+            else
+            {
+                Debug.Log($"[DisableFlowerFields] EnemyFlowerFieldToi: {EnemyFlowerFieldToi.name} is already inactive.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[DisableFlowerFields] EnemyFlowerFieldToi is null.");
+        }
+
+        if (EnemyFlowerFieldKami != null)
+        {
+            if (EnemyFlowerFieldKami.activeSelf)
+            {
+                Debug.Log($"[DisableFlowerFields] Disabling active EnemyFlowerFieldKami: {EnemyFlowerFieldKami.name}");
+                EnemyFlowerFieldKami.SetActive(false);
+            }
+            else
+            {
+                Debug.Log($"[DisableFlowerFields] EnemyFlowerFieldKami: {EnemyFlowerFieldKami.name} is already inactive.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[DisableFlowerFields] EnemyFlowerFieldKami is null.");
+        }
+
+        Debug.Log("[DisableFlowerFields] All FlowerFields have been checked and disabled if active.");
+    }
+
 
 
     [Server]
@@ -714,6 +827,43 @@ public class PlayerManager : NetworkBehaviour
     }
 
 
+    [Server]
+    public void ForceDiscardTile(string tileName, bool isTsumoTile)
+    {
+        string prefix = tileName.Substring(0, 2);
+
+        if (!TileDictionary.StringToNum.TryGetValue(prefix, out int tileId))
+        {
+            Debug.LogError($"Invalid tile prefix: {prefix}");
+            return;
+        }
+
+        if (PlayerKawa == null)
+        {
+            Debug.LogError("PlayerKawa is null. Cannot get TileGrid component.");
+            return;
+        }
+
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
+        {
+            Debug.LogWarning("No PlayerManager instances found in the scene.");
+            return;
+        }
+
+        Debug.Log($"Found {allPlayerManagers.Length} PlayerManager instances:");
+        foreach (var playerManager in allPlayerManagers)
+        {
+            NetworkConnection networkConnection = playerManager.GetComponent<NetworkIdentity>().connectionToClient;
+            Debug.Log($"Assigned PlayerIndex {playerManager.PlayerIndex} to PlayerManager with NetId: {playerManager.GetComponent<NetworkIdentity>().netId}");
+            if (networkConnection != null)
+            {
+                TargetDiscardTile(networkConnection, tileId, PlayerIndex, isTsumoTile);
+            }
+        }
+    }
+
 
 
     [Command]
@@ -755,6 +905,8 @@ public class PlayerManager : NetworkBehaviour
 
 
 
+    
+
     public IEnumerator HandleTileDiscardCoroutine(int tileId, int playerIndex, bool IsTsumoTile, Action onComplete)
     {
         // tileId로 TilePrefabArray에서 해당 프리팹 가져오기
@@ -770,6 +922,7 @@ public class PlayerManager : NetworkBehaviour
         Debug.Log($"Discarded player is {playerIndex}, here player is {PlayerIndex}");
         if (playerIndex == PlayerIndex)
         {
+            decisionMade = true;
             kawaPrefab = PlayerKawa;
         }
         else
@@ -886,7 +1039,8 @@ public class PlayerManager : NetworkBehaviour
     [Command]
     public void CmdReturnActionDecision(int playerWindIndex, ActionPriorityInfo actionPriorityInfo, int actionTurnId, int tileId)
     {
-        serverManager.ReceiveActionDecision(playerWindIndex, actionPriorityInfo, actionTurnId, tileId);
+        remainingTime = -1;
+        serverManager.StartCoroutine(serverManager.ReceiveActionDecisionCoroutine(playerWindIndex, actionPriorityInfo, actionTurnId, tileId));
     }
 
     private bool decisionMade = false; // 전역 변수로 이동하여 버튼 클릭 상태를 추적
@@ -898,6 +1052,20 @@ public class PlayerManager : NetworkBehaviour
         decisionMade = false;
         if (actions.Count == 0)
         {
+            remainingTime = 60f;
+
+            while (remainingTime > 0 && !decisionMade)
+            {
+                remainingTime -= Time.deltaTime;
+                yield return null;
+            }
+
+            if (!decisionMade)
+            {
+                Debug.Log("[MakeButtonsAndHandlePlayerDecision] Time is up. Defaulting to Skip.");
+                remainingTime = -1;
+                CmdReturnActionDecision(playerIndex, new ActionPriorityInfo(ActionType.TIMEOUT, 0, -1), actionTurnId, tileId);
+            }
             yield break;
         }
         int priority = actions[0].Priority;
@@ -1031,12 +1199,13 @@ public class PlayerManager : NetworkBehaviour
         skipButton.GetComponent<Button>().onClick.AddListener(() =>
         {
             Debug.Log("[MakeButtonsAndHandlePlayerDecision] Skip button clicked.");
+            remainingTime = -1;
             decisionMade = true;
             CmdReturnActionDecision(playerIndex, new ActionPriorityInfo(ActionType.SKIP, priority, -1), actionTurnId, tileId);
         });
 
         // 20초 타이머 시작
-        float remainingTime = 30f;
+        remainingTime = 60f;
 
         while (remainingTime > 0 && !decisionMade)
         {
@@ -1047,7 +1216,8 @@ public class PlayerManager : NetworkBehaviour
         if (!decisionMade)
         {
             Debug.Log("[MakeButtonsAndHandlePlayerDecision] Time is up. Defaulting to Skip.");
-            CmdReturnActionDecision(playerIndex, new ActionPriorityInfo(ActionType.SKIP, priority, -1), actionTurnId, tileId);
+            remainingTime = -1;
+            CmdReturnActionDecision(playerIndex, new ActionPriorityInfo(ActionType.TIMEOUT, priority, -1), actionTurnId, tileId);
         }
 
         // 버튼 제거
@@ -1332,6 +1502,208 @@ public class PlayerManager : NetworkBehaviour
 
 
     private bool IsTargetDiscardTileRunning = false; // TargetDiscardTile 실행 상태를 나타내는 플래그
+    private bool IsTargetReplacementTileRunning = false;
+
+
+
+    private bool EndFlag_FlowerReplacement = false;
+
+    [Command]
+    public void CmdSetFlowerReplacementFlagEnd()
+    {
+        EndFlag_FlowerReplacement = true;
+    }
+
+    [Server]
+    public void SetFlowerReplacementFlagFalse()
+    {
+        EndFlag_FlowerReplacement = false;
+    }
+    [Server]
+    public bool IsFlowerReplacementComplete()
+    {
+        return EndFlag_FlowerReplacement;
+    }
+
+    public IEnumerator HandleFlowerReplacementCoroutine(int tileId, int playerIndex, bool IsTsumoTile, Action onComplete)
+    {
+        Debug.Log($"[HandleFlowerReplacementCoroutine] Started. tileId: {tileId}, playerIndex: {playerIndex}, IsTsumoTile: {IsTsumoTile}");
+
+        // tileId가 34인지 확인
+        if (tileId != 34)
+        {
+            Debug.LogError($"[HandleFlowerReplacementCoroutine] Invalid tileId {tileId}. It is not 34 (flower tile).");
+            onComplete?.Invoke();
+            yield break;
+        }
+
+        GameObject FlowerField = null;
+        GameObject haipaiPrefab = null;
+
+        // FlowerField 및 haipaiPrefab 결정
+        if (playerIndex == PlayerIndex)
+        {
+            FlowerField = PlayerFlowerField;
+            haipaiPrefab = PlayerHaipai;
+            Debug.Log($"[HandleFlowerReplacementCoroutine] Player's FlowerField: {FlowerField?.name}, Player's Haipai: {haipaiPrefab?.name}");
+        }
+        else
+        {
+            int relativeIndex = GetRelativeIndex(playerIndex);
+            Debug.Log($"[HandleFlowerReplacementCoroutine] Get relative index {relativeIndex} for playerIndex: {playerIndex}");
+
+            switch (relativeIndex)
+            {
+                case 0:
+                    FlowerField = EnemyFlowerFieldShimo;
+                    haipaiPrefab = EnemyHaipaiShimo;
+                    break;
+                case 1:
+                    FlowerField = EnemyFlowerFieldToi;
+                    haipaiPrefab = EnemyHaipaiToi;
+                    break;
+                case 2:
+                    FlowerField = EnemyFlowerFieldKami;
+                    haipaiPrefab = EnemyHaipaiKami;
+                    break;
+                default:
+                    Debug.LogError($"[HandleFlowerReplacementCoroutine] Invalid relative index: {relativeIndex}");
+                    onComplete?.Invoke();
+                    yield break;
+            }
+
+            Debug.Log($"[HandleFlowerReplacementCoroutine] Enemy's FlowerField: {FlowerField?.name}, Enemy's Haipai: {haipaiPrefab?.name}");
+        }
+
+        // FlowerField가 null인 경우 처리 중단
+        if (FlowerField == null)
+        {
+            Debug.LogError("[HandleFlowerReplacementCoroutine] FlowerField is null. Cannot proceed.");
+            onComplete?.Invoke();
+            yield break;
+        }
+
+        // haipaiPrefab 처리
+        if (haipaiPrefab != null)
+        {
+            TileGrid haipaiTileGrid = haipaiPrefab.GetComponent<TileGrid>();
+            if (haipaiTileGrid != null)
+            {
+                if (playerIndex != PlayerIndex)
+                {
+                    Debug.Log($"[HandleFlowerReplacementCoroutine] Showing Tedashi for playerIndex: {playerIndex}, IsTsumoTile: {!IsTsumoTile}");
+                    haipaiTileGrid.ShowTedashi(!IsTsumoTile);
+                }
+                else
+                {
+                    Debug.Log($"[HandleFlowerReplacementCoroutine] Destroying tileId: {tileId} in player's Haipai.");
+                    haipaiTileGrid.DestoryByTileId(tileId);
+                }
+            }
+            else
+            {
+                Debug.LogError($"[HandleFlowerReplacementCoroutine] TileGrid component not found on haipaiPrefab: {haipaiPrefab.name}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[HandleFlowerReplacementCoroutine] HaipaiPrefab is null. Skipping Tedashi or Destroy.");
+        }
+
+        // FlowerField의 활성화 상태 확인 및 Count 업데이트
+        TMP_Text countText = FlowerField.transform.Find("Count").GetComponent<TMP_Text>();
+        if (countText == null)
+        {
+            Debug.LogError($"[HandleFlowerReplacementCoroutine] Count TMP_Text not found in {FlowerField.name}");
+            onComplete?.Invoke();
+            yield break;
+        }
+
+        if (!FlowerField.activeSelf)
+        {
+            Debug.Log($"[HandleFlowerReplacementCoroutine] Activating FlowerField: {FlowerField.name} and initializing count to ×1.");
+            FlowerField.SetActive(true);
+            countText.text = "×1";
+        }
+        else
+        {
+            string currentText = countText.text.Replace("×", "").Trim();
+            Debug.Log($"[HandleFlowerReplacementCoroutine] Current Count Text in {FlowerField.name}: {currentText}");
+
+            if (int.TryParse(currentText, out int currentCount))
+            {
+                currentCount++;
+                if (currentCount > 8)
+                {
+                    Debug.LogWarning($"[HandleFlowerReplacementCoroutine] Count exceeds maximum value (8) in {FlowerField.name}. Clamping to 8.");
+                    currentCount = 8;
+                }
+                countText.text = $"×{currentCount}";
+                Debug.Log($"[HandleFlowerReplacementCoroutine] Updated Count Text in {FlowerField.name}: {countText.text}");
+            }
+            else
+            {
+                Debug.LogError($"[HandleFlowerReplacementCoroutine] Failed to parse Count text in {FlowerField.name}: {currentText}");
+            }
+        }
+
+        Debug.Log($"[HandleFlowerReplacementCoroutine] Flower replacement handled successfully for PlayerIndex {playerIndex}. FlowerField: {FlowerField.name}, Final Count: {countText.text}");
+        onComplete?.Invoke();
+    }
+
+
+
+    [TargetRpc]
+    public void TargetFlowerReplacement(NetworkConnection target, int tileId, int playerIndex, bool IsTsumoTile)
+    {
+        Debug.Log($"[TargetFlowerReplacement] Started. Target: {target}, tileId: {tileId}, playerIndex: {playerIndex}, IsTsumoTile: {IsTsumoTile}");
+
+        // 현재 씬에서 모든 PlayerManager 객체를 가져옵니다.
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+        Debug.Log($"[TargetFlowerReplacement] Found {allPlayerManagers.Length} PlayerManager instances in the scene.");
+
+        // 모든 PlayerManager 객체를 순회합니다.
+        foreach (var playerManager in allPlayerManagers)
+        {
+            Debug.Log($"[TargetFlowerReplacement] Checking PlayerManager. PlayerIndex: {playerManager.PlayerIndex}, isOwned: {playerManager.isOwned}");
+
+            // 현재 로컬 플레이어가 소유한 PlayerManager인지 확인합니다.
+            if (playerManager.isOwned)
+            {
+                Debug.Log($"[TargetFlowerReplacement] Found owned PlayerManager. PlayerIndex: {playerManager.PlayerIndex}");
+
+                // 타일 교체 작업이 진행 중임을 표시하는 플래그 설정
+                playerManager.IsTargetReplacementTileRunning = true;
+
+                // 작업 완료 여부를 확인하기 위한 플래그 초기화
+                bool isComplete = false;
+
+                // 코루틴 실행
+                Debug.Log($"[TargetFlowerReplacement] Starting HandleFlowerReplacementCoroutine for PlayerIndex: {playerManager.PlayerIndex}");
+                playerManager.StartCoroutine(playerManager.HandleFlowerReplacementCoroutine(tileId, playerIndex, IsTsumoTile, () =>
+                {
+                    Debug.Log($"[TargetFlowerReplacement] HandleFlowerReplacementCoroutine completed for tileId: {tileId}, playerIndex: {playerIndex}");
+                    isComplete = true;
+
+                    // 작업 완료 플래그 해제
+                    playerManager.IsTargetReplacementTileRunning = false;
+
+                    // 서버에 작업 완료 보고
+                    Debug.Log($"[TargetFlowerReplacement] Reporting completion to server for PlayerIndex: {playerManager.PlayerIndex}");
+                    playerManager.CmdSetFlowerReplacementFlagEnd();
+                }));
+
+                // 작업 완료될 때까지 대기하는 코루틴 실행
+                Debug.Log($"[TargetFlowerReplacement] Starting WaitUntilComplete for PlayerIndex: {playerManager.PlayerIndex}");
+                playerManager.StartCoroutine(WaitUntilComplete(() => isComplete));
+
+                Debug.Log($"[TargetFlowerReplacement] Exiting loop after handling PlayerIndex: {playerManager.PlayerIndex}");
+                return;
+            }
+        }
+
+        Debug.Log("[TargetFlowerReplacement] No owned PlayerManager found. Exiting.");
+    }
 
 
     [TargetRpc]
@@ -1486,6 +1858,7 @@ public class PlayerManager : NetworkBehaviour
         // TargetDiscardTile 실행 중인지 확인
         StartCoroutine(WaitForTargetDiscardTile());
 
+        remainingTime = -1;
 
         PlayerHandTiles.Clear();
         PlayerCallBlocksList.Clear();
@@ -1529,6 +1902,7 @@ public class PlayerManager : NetworkBehaviour
                 gameStatusUI.Initialize();
             }
         }
+        DisableFlowerFields();
         CmdSetInitializeFlagEnd();
     }
 

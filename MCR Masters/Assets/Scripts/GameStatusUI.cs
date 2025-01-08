@@ -12,6 +12,7 @@ public class GameStatusUI : MonoBehaviour
     public TextMeshProUGUI roundWindText;
     public TextMeshProUGUI[] enemySeatWindsText;
     public TextMeshProUGUI playerSeatWindText;
+    public TextMeshProUGUI TimeLeftText;
 
     private PlayerManager localPlayerManager;
 
@@ -44,6 +45,7 @@ public class GameStatusUI : MonoBehaviour
             //Debug.LogError("Enemy TextMeshProUGUI array lengths must be at least 3.");
             return;
         }
+
         IsUpdated = true;
     }
 
@@ -96,6 +98,36 @@ public class GameStatusUI : MonoBehaviour
         string roundWindName = localPlayerManager.playerStatus.RoundWind.ToString();
         int RoundIndex = localPlayerManager.GetRoundIndex(); ;
         roundWindText.text = $"{roundWindName.Substring(0,1)}{RoundIndex}";
+
+        // 남은 시간 표시 및 색상 변경
+        UpdateRemainingTime();
+    }
+
+    private void UpdateRemainingTime()
+    {
+        float remainingTime = localPlayerManager.getRemainingTime();
+        int timeToDisplay = Mathf.FloorToInt(remainingTime); // 남은 시간의 내림 정수
+        TimeLeftText.text = $"{timeToDisplay}";
+
+        // 색상 설정
+        Color textColor;
+        if (remainingTime <= 0)
+        {
+            textColor = new Color(0, 0, 0, 0); // 투명
+        }
+        else if (remainingTime > 0 && remainingTime <= 5)
+        {
+            textColor = Color.red; // 빨간색
+        }
+        else
+        {
+            textColor = Color.black; // 검은색
+        }
+
+        // Material 색상 덮어쓰기
+        Material material = TimeLeftText.fontMaterial;
+        material.SetColor(ShaderUtilities.ID_FaceColor, textColor);
+        TimeLeftText.fontMaterial = material;
     }
 
 }

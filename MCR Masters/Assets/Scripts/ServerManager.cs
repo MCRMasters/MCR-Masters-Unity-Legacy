@@ -227,15 +227,24 @@ public class ServerManager : NetworkBehaviour
 
         TotalActionPriorityList.Sort();
 
-        if (TotalActionPriorityList.Count > 0)
-        {
-            PlayerManagers[playerWindIndex].TargetShowActionButtons(PlayerManagers[playerWindIndex].connectionToClient, playerWindIndex, TotalActionPriorityList, ActionTurnId, tileId);
-        }
+        PlayerManagers[playerWindIndex].TargetShowActionButtons(PlayerManagers[playerWindIndex].connectionToClient, playerWindIndex, TotalActionPriorityList, ActionTurnId, tileId);
+        //if (TotalActionPriorityList.Count > 0)
+        //{
+            
+        //}
     }
 
-    private void DoTsumo(int playerWindIndex)
+    private void DoTsumo(int playerWindIndex, bool IsReplacement)
     {
-        var drawnTiles = DrawTiles(1);
+        List<int> drawnTiles = null;
+        if (IsReplacement)
+        {
+            drawnTiles = DrawTilesRight(1);
+        }
+        else
+        {
+            drawnTiles = DrawTiles(1);
+        }
         if (drawnTiles == null || drawnTiles.Count == 0)
         {
             Debug.Log($"[DoTsumo] Player {playerWindIndex}: No more tiles to draw.");
@@ -296,7 +305,7 @@ public class ServerManager : NetworkBehaviour
         Debug.Log($"[ProceedNextTurn] Next turn for playerWindIndex: {playerWindIndex}, playerIndex: {PlayerManagers[playerWindIndex].PlayerIndex}");
 
 
-        DoTsumo(playerWindIndex);
+        DoTsumo(playerWindIndex, false);
     }
 
     private int GetPriorityFromWind(int playerWindIndex)
@@ -369,7 +378,7 @@ public class ServerManager : NetworkBehaviour
     private List<ActionPriorityInfo> GetPossibleFlowerChoices(int tileId, int playerWindIndex)
     {
         List<ActionPriorityInfo> resultList = new List<ActionPriorityInfo>();
-        if (winningCondition == null || winningCondition.IsDiscarded || playerWindIndex != CurrentPlayerWindIndex)
+        if (winningCondition == null || winningCondition.IsDiscarded || playerWindIndex != CurrentPlayerWindIndex || winningCondition.IsLastTileInTheGame)
         {
             return resultList;
         }
@@ -433,68 +442,144 @@ public class ServerManager : NetworkBehaviour
         }
     }
 
-
-    public void ReceiveActionDecision(int playerWindIndex, ActionPriorityInfo actionPriorityInfo, int actionTurnId, int tileId)
+    private void ReplaceFlowerInServer(int actionWindIndex)
     {
+        if (handList[actionWindIndex] == null)
+            return;
+        handList[actionWindIndex].DiscardOneTile(34);
+        DoTsumo(actionWindIndex, true);
+    }
+
+
+    public IEnumerator ReceiveActionDecisionCoroutine(int playerWindIndex, ActionPriorityInfo actionPriorityInfo, int actionTurnId, int tileId)
+    {
+        Debug.Log($"[ReceiveActionDecisionCoroutine] Started. playerWindIndex: {playerWindIndex}, actionPriorityInfo: {actionPriorityInfo}, actionTurnId: {actionTurnId}, tileId: {tileId}");
+
         if (actionTurnId != ActionTurnId)
         {
-            return;
+            Debug.Log($"[ReceiveActionDecisionCoroutine] actionTurnId mismatch. Expected: {ActionTurnId}, Received: {actionTurnId}. Exiting coroutine.");
+            yield break;
         }
+
         int priority = actionPriorityInfo.Priority;
+        Debug.Log($"[ReceiveActionDecisionCoroutine] Priority of received action: {priority}");
+
         List<ActionPriorityInfo> NewTotalList = new List<ActionPriorityInfo>();
         foreach (ActionPriorityInfo action in TotalActionPriorityList)
         {
             if (priority == action.Priority)
             {
+                Debug.Log($"[ReceiveActionDecisionCoroutine] Skipping action with matching priority: {action}");
                 continue;
             }
             NewTotalList.Add(action);
         }
+
         DebugTotalActionPriorityList();
         TotalActionPriorityList = NewTotalList;
+
         if (actionPriorityInfo.Type != ActionType.SKIP)
         {
+            Debug.Log($"[ReceiveActionDecisionCoroutine] Adding action to TotalActionPriorityList: {actionPriorityInfo}");
             TotalActionPriorityList.Add(actionPriorityInfo);
             SelectedActionPrioritySet.Add(actionPriorityInfo);
         }
+
+        if (actionPriorityInfo.Type == ActionType.TIMEOUT)
+        {
+            PlayerManagers[GetWindFromPriority(priority)].ForceDiscardTile(TileDictionary.NumToString[winningCondition.WinningTile], true);
+            DoDiscard(winningCondition.WinningTile, GetWindFromPriority(priority));
+            yield break;
+        }
+
         TotalActionPriorityList.Sort();
         DebugTotalActionPriorityList();
+
         if (TotalActionPriorityList.Count == 0)
         {
-            // go to next turn
-            kawaTilesList[playerWindIndex].Add(tileId);
-            ProceedNextTurn(playerWindIndex);
+            Debug.Log("[ReceiveActionDecisionCoroutine] No remaining actions in TotalActionPriorityList.");
+            if (winningCondition.IsDiscarded)
+            {
+                Debug.Log($"[ReceiveActionDecisionCoroutine] Adding tileId {tileId} to kawaTilesList for playerWindIndex: {playerWindIndex}");
+                kawaTilesList[playerWindIndex].Add(tileId);
+
+                Debug.Log($"[ReceiveActionDecisionCoroutine] Proceeding to next turn for playerWindIndex: {playerWindIndex}");
+                ProceedNextTurn(playerWindIndex);
+            }
         }
         else if (SelectedActionPrioritySet.Contains(TotalActionPriorityList[0]))
         {
-            // 
-            // TODO: Should Stop And Clear All Buttons in Client by Cmd
-            // TODO: Do Call Logic by TargetRPC
             var action = TotalActionPriorityList[0];
             int actionWindIndex = GetWindFromPriority(action.Priority);
-            Debug.Log($"action: {action}, actionWindIndex: {actionWindIndex}");
+            Debug.Log($"[ReceiveActionDecisionCoroutine] Highest priority action: {action}, actionWindIndex: {actionWindIndex}");
+
             if (action.Type == ActionType.HU)
             {
+                Debug.Log("[ReceiveActionDecisionCoroutine] Action is HU. Clearing buttons and finalizing round score.");
                 for (int i = 0; i < MaxPlayers; i++)
                 {
                     if (PlayerManagers[i] == null)
+                    {
+                        Debug.Log($"[ReceiveActionDecisionCoroutine] PlayerManagers[{i}] is null. Skipping.");
                         continue;
+                    }
+
                     PlayerManagers[i].TargetClearButtons(PlayerManagers[i].connectionToClient);
                 }
+
                 ScoreSourcePlayerWindIndex = CurrentPlayerWindIndex;
                 FinalizeRoundScore(actionWindIndex);
             }
-            else
+            else if (action.Type == ActionType.FLOWER)
             {
+                bool IsTsumoTile = winningCondition.WinningTile == 34;
+                Debug.Log($"[ReceiveActionDecisionCoroutine] Action is FLOWER. IsTsumoTile: {IsTsumoTile}");
+
                 for (int i = 0; i < MaxPlayers; i++)
                 {
                     if (PlayerManagers[i] == null)
+                    {
+                        Debug.Log($"[ReceiveActionDecisionCoroutine] PlayerManagers[{i}] is null. Skipping.");
                         continue;
-                    PlayerManagers[i].TargetClearButtonsAndDoCallAction(PlayerManagers[i].connectionToClient, TotalActionPriorityList[0], tileId, playerWindToIndex[actionWindIndex]);
+                    }
+
+                    Debug.Log($"[ReceiveActionDecisionCoroutine] Starting FlowerReplacement for PlayerManagers[{i}].");
+
+                    PlayerManagers[i].SetFlowerReplacementFlagFalse();
+                    PlayerManagers[i].TargetFlowerReplacement(PlayerManagers[i].connectionToClient, 34, PlayerManagers[actionWindIndex].PlayerIndex, IsTsumoTile);
+
+                    Debug.Log($"[ReceiveActionDecisionCoroutine] Waiting for PlayerManagers[{i}] to complete FlowerReplacement.");
+                    yield return new WaitUntil(() => PlayerManagers[i].IsFlowerReplacementComplete());
+                    Debug.Log($"[ReceiveActionDecisionCoroutine] FlowerReplacement completed for PlayerManagers[{i}].");
+                }
+                ReplaceFlowerInServer(actionWindIndex);
+                Debug.Log("[ReceiveActionDecisionCoroutine] All players have completed FlowerReplacement.");
+            }
+            else
+            {
+                Debug.Log($"[ReceiveActionDecisionCoroutine] Action is CALL. Executing TargetClearButtonsAndDoCallAction for all players.");
+                for (int i = 0; i < MaxPlayers; i++)
+                {
+                    if (PlayerManagers[i] == null)
+                    {
+                        Debug.Log($"[ReceiveActionDecisionCoroutine] PlayerManagers[{i}] is null. Skipping.");
+                        continue;
+                    }
+
+                    PlayerManagers[i].TargetClearButtonsAndDoCallAction(
+                        PlayerManagers[i].connectionToClient,
+                        TotalActionPriorityList[0],
+                        tileId,
+                        playerWindToIndex[actionWindIndex]
+                    );
                 }
             }
         }
+
+        Debug.Log("[ReceiveActionDecisionCoroutine] Completed.");
     }
+
+
 
     private void CheckActionAfterDiscard(int tileId, int playerWindIndex)
     {
@@ -825,10 +910,10 @@ public class ServerManager : NetworkBehaviour
         ShuffleTiles();
         
         
-        //DealTilesToPlayers();
+        DealTilesToPlayers();
 
         // Warning: Test Function!!
-        DealTilesToPlayersTest();
+        //DealTilesToPlayersTest();
         // 
         Debug.Log("Initialization of players completed. Proceeding to next turn.");
         ProceedNextTurn(3);
@@ -921,8 +1006,8 @@ public class ServerManager : NetworkBehaviour
             kawaTilesList[i] = new();
             visibleTileCounts[i] = 0;
         }
-        for (int tileNum = 0; tileNum < 18; tileNum++)
-        //for (int tileNum = 0; tileNum < 34; tileNum++)
+        //for (int tileNum = 0; tileNum < 9; tileNum++)
+        for (int tileNum = 0; tileNum < 34; tileNum++)
         {
             for (int i = 0; i < 4; i++)
             {
@@ -930,10 +1015,10 @@ public class ServerManager : NetworkBehaviour
             }
         }
 
-        //for (int i = 0; i < 8; i++)
-        //{
-        //    tileDeck.Add(34); // 0f tiles
-        //}
+        for (int i = 0; i < 8; i++)
+        {
+            tileDeck.Add(34); // 0f tiles
+        }
         tileDrawIndexRight = tileDeck.Count - 1;
         Debug.Log("Tile deck initialized with " + tileDeck.Count + " tiles.");
     }
@@ -958,6 +1043,18 @@ public class ServerManager : NetworkBehaviour
         Debug.Log("Tiles shuffled.");
     }
 
+    public List<int> DrawTilesRight(int count)
+    {
+        if (tileDrawIndexRight - tileDrawIndexLeft + 1 < count)
+        {
+            Debug.LogWarning("Not enough tiles left in the deck.");
+            return null;
+        }
+
+        var drawnTiles = tileDeck.GetRange(tileDrawIndexRight - count + 1, count);
+        tileDrawIndexRight -= count;
+        return drawnTiles;
+    }
 
     public List<int> DrawTiles(int count)
     {

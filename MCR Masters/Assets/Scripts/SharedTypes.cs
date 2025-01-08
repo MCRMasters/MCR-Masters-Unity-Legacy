@@ -163,7 +163,8 @@ namespace Game.Shared
 
     public enum ActionType 
     { 
-        SKIP = -1,
+        TIMEOUT = -2,
+        SKIP,
         HU,
         KAN,
         PON,

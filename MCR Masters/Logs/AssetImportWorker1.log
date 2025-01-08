@@ -9,13 +9,13 @@ C:\Program Files\Unity\Hub\Editor\6000.0.32f1\Editor\Unity.exe
 -batchMode
 -noUpm
 -name
-AssetImportWorker2
+AssetImportWorker1
 -projectPath
 C:/Users/uyu/Documents/GitHub/MCR-Masters/MCR Masters
 -logFile
-Logs/AssetImportWorker2.log
+Logs/AssetImportWorker1.log
 -srvPort
-4545
+9666
 -job-worker-count
 7
 -background-job-worker-count
@@ -59,12 +59,12 @@ C:/Users/uyu/Documents/GitHub/MCR-Masters/MCR Masters
     "memorysetup-temp-allocator-size-gi-baking-worker=262144"
     "memorysetup-temp-allocator-size-gi-baking-worker=262144"
     "memorysetup-temp-allocator-size-gfx=262144"
-Player connection [36388]  Target information:
+Player connection [13276]  Target information:
 
-Player connection [36388]  * "[IP] 172.30.1.43 [Port] 0 [Flags] 2 [Guid] 2560473954 [EditorId] 2560473954 [Version] 1048832 [Id] WindowsEditor(7,DESKTOP-KNUV1I8) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+Player connection [13276]  * "[IP] 172.30.1.43 [Port] 0 [Flags] 2 [Guid] 1820005095 [EditorId] 1820005095 [Version] 1048832 [Id] WindowsEditor(7,DESKTOP-KNUV1I8) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
 
-Player connection [36388] Host joined multi-casting on [225.0.0.222:54997]...
-Player connection [36388] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Player connection [13276] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [13276] Host joined alternative multi-casting on [225.0.0.222:34997]...
 JobSystem: Creating JobQueue using job-worker-count value 7
 [Physics::Module] Initialized fallback backend.
 [Physics::Module] Id: 0xdecafbad
@@ -75,8 +75,8 @@ Library Redirect Path: Library/
 [Physics::Module] SDK Version: 4.1.2
 [Physics::Module] Integration Version: 1.0.0
 [Physics::Module] Threading Mode: Multi-Threaded
-Refreshing native plugins compatible for Editor in 119.11 ms, found 5 plugins.
-Preloading 1 native plugins for Editor in 0.55 ms.
+Refreshing native plugins compatible for Editor in 1.51 ms, found 5 plugins.
+Preloading 1 native plugins for Editor in 0.33 ms.
 Initialize engine version: 6000.0.32f1 (b2e806cf271c)
 [Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/Resources/UnitySubsystems
 [Subsystems] Discovering subsystems at path C:/Users/uyu/Documents/GitHub/MCR-Masters/MCR Masters/Assets
@@ -91,45 +91,45 @@ Initialize mono
 Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/Managed'
 Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
 Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/MonoBleedingEdge/etc'
-Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56064
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56984
 Begin MonoManager ReloadAssembly
 Registering precompiled unity dll's ...
 Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
 Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport/UnityEditor.LinuxStandalone.Extensions.dll
-Registered in 0.003004 seconds.
-- Loaded All Assemblies, in  0.366 seconds
+Registered in 0.003085 seconds.
+- Loaded All Assemblies, in  0.245 seconds
 Native extension for LinuxStandalone target not found
 Native extension for WindowsStandalone target not found
 Mono: successfully reloaded assembly
-- Finished resetting the current domain, in  0.255 seconds
-Domain Reload Profiling: 620ms
-	BeginReloadAssembly (87ms)
+- Finished resetting the current domain, in  0.219 seconds
+Domain Reload Profiling: 463ms
+	BeginReloadAssembly (78ms)
 		ExecutionOrderSort (0ms)
 		DisableScriptedObjects (0ms)
 		BackupInstance (0ms)
 		ReleaseScriptingObjects (0ms)
 		CreateAndSetChildDomain (0ms)
-	RebuildCommonClasses (23ms)
-	RebuildNativeTypeToScriptingClass (8ms)
-	initialDomainReloadingComplete (32ms)
-	LoadAllAssembliesAndSetupDomain (215ms)
-		LoadAssemblies (86ms)
+	RebuildCommonClasses (24ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (37ms)
+	LoadAllAssembliesAndSetupDomain (96ms)
+		LoadAssemblies (77ms)
 		RebuildTransferFunctionScriptingTraits (0ms)
-		AnalyzeDomain (213ms)
-			TypeCache.Refresh (212ms)
-				TypeCache.ScanAssembly (203ms)
+		AnalyzeDomain (94ms)
+			TypeCache.Refresh (93ms)
+				TypeCache.ScanAssembly (85ms)
 			BuildScriptInfoCaches (0ms)
 			ResolveRequiredComponents (0ms)
-	FinalizeReload (255ms)
+	FinalizeReload (219ms)
 		ReleaseScriptCaches (0ms)
 		RebuildScriptCaches (0ms)
-		SetupLoadedEditorAssemblies (223ms)
+		SetupLoadedEditorAssemblies (198ms)
 			LogAssemblyErrors (0ms)
-			InitializePlatformSupportModulesInManaged (45ms)
+			InitializePlatformSupportModulesInManaged (42ms)
 			SetLoadedEditorAssemblies (3ms)
-			BeforeProcessingInitializeOnLoad (32ms)
-			ProcessInitializeOnLoadAttributes (94ms)
-			ProcessInitializeOnLoadMethodAttributes (48ms)
+			BeforeProcessingInitializeOnLoad (30ms)
+			ProcessInitializeOnLoadAttributes (88ms)
+			ProcessInitializeOnLoadMethodAttributes (35ms)
 			AfterProcessingInitializeOnLoad (0ms)
 			EditorAssembliesLoaded (0ms)
 		ExecutionOrderSort2 (0ms)
@@ -139,68 +139,100 @@ Worker process is ready to serve import requests
 Import Worker Mode flag is 0x00
 Begin MonoManager ReloadAssembly
 Symbol file LoadedFromMemory is not a mono symbol file
-- Loaded All Assemblies, in  1.610 seconds
-Refreshing native plugins compatible for Editor in 1.00 ms, found 5 plugins.
+- Loaded All Assemblies, in  0.601 seconds
+Refreshing native plugins compatible for Editor in 0.92 ms, found 5 plugins.
 Native extension for LinuxStandalone target not found
 Native extension for WindowsStandalone target not found
 Mirror | mirror-networking.com | discord.gg/N9QVxbM
 Mono: successfully reloaded assembly
-- Finished resetting the current domain, in  0.973 seconds
-Domain Reload Profiling: 2581ms
-	BeginReloadAssembly (118ms)
+- Finished resetting the current domain, in  0.535 seconds
+Domain Reload Profiling: 1134ms
+	BeginReloadAssembly (114ms)
 		ExecutionOrderSort (0ms)
-		DisableScriptedObjects (3ms)
+		DisableScriptedObjects (4ms)
 		BackupInstance (0ms)
 		ReleaseScriptingObjects (0ms)
-		CreateAndSetChildDomain (26ms)
-	RebuildCommonClasses (23ms)
+		CreateAndSetChildDomain (27ms)
+	RebuildCommonClasses (26ms)
 	RebuildNativeTypeToScriptingClass (8ms)
-	initialDomainReloadingComplete (27ms)
-	LoadAllAssembliesAndSetupDomain (1431ms)
-		LoadAssemblies (1268ms)
+	initialDomainReloadingComplete (29ms)
+	LoadAllAssembliesAndSetupDomain (421ms)
+		LoadAssemblies (256ms)
 		RebuildTransferFunctionScriptingTraits (0ms)
-		AnalyzeDomain (231ms)
-			TypeCache.Refresh (160ms)
-				TypeCache.ScanAssembly (146ms)
-			BuildScriptInfoCaches (60ms)
+		AnalyzeDomain (229ms)
+			TypeCache.Refresh (161ms)
+				TypeCache.ScanAssembly (147ms)
+			BuildScriptInfoCaches (58ms)
 			ResolveRequiredComponents (8ms)
-	FinalizeReload (973ms)
+	FinalizeReload (535ms)
 		ReleaseScriptCaches (0ms)
 		RebuildScriptCaches (0ms)
-		SetupLoadedEditorAssemblies (652ms)
+		SetupLoadedEditorAssemblies (444ms)
 			LogAssemblyErrors (0ms)
-			InitializePlatformSupportModulesInManaged (10ms)
-			SetLoadedEditorAssemblies (3ms)
-			BeforeProcessingInitializeOnLoad (89ms)
-			ProcessInitializeOnLoadAttributes (306ms)
-			ProcessInitializeOnLoadMethodAttributes (240ms)
-			AfterProcessingInitializeOnLoad (3ms)
+			InitializePlatformSupportModulesInManaged (9ms)
+			SetLoadedEditorAssemblies (4ms)
+			BeforeProcessingInitializeOnLoad (77ms)
+			ProcessInitializeOnLoadAttributes (282ms)
+			ProcessInitializeOnLoadMethodAttributes (71ms)
+			AfterProcessingInitializeOnLoad (2ms)
 			EditorAssembliesLoaded (0ms)
 		ExecutionOrderSort2 (0ms)
-		AwakeInstancesAfterBackupRestoration (5ms)
+		AwakeInstancesAfterBackupRestoration (4ms)
 Launched and connected shader compiler UnityShaderCompiler.exe after 0.01 seconds
-Refreshing native plugins compatible for Editor in 1.79 ms, found 5 plugins.
-Preloading 1 native plugins for Editor in 0.04 ms.
+Refreshing native plugins compatible for Editor in 1.18 ms, found 5 plugins.
+Preloading 1 native plugins for Editor in 0.03 ms.
 Unloading 224 Unused Serialized files (Serialized files now loaded: 0)
-Unloading 7128 unused Assets / (4.8 MB). Loaded Objects now: 7848.
-Memory consumption went from 198.1 MB to 193.2 MB.
-Total: 8.166300 ms (FindLiveObjects: 0.723400 ms CreateObjectMapping: 0.729000 ms MarkObjects: 4.223100 ms  DeleteObjects: 2.489800 ms)
+Unloading 7128 unused Assets / (4.0 MB). Loaded Objects now: 7848.
+Memory consumption went from 199.8 MB to 195.7 MB.
+Total: 8.408000 ms (FindLiveObjects: 0.754400 ms CreateObjectMapping: 0.728500 ms MarkObjects: 4.681600 ms  DeleteObjects: 2.242300 ms)
 
 ========================================================================
 Received Import Request.
-  Time since last request: 22770.096360 seconds.
-  path: Assets/Prefabs/Buttons/FlowerButton.prefab
-  artifactKey: Guid(4996456e6cae01742830cf6f5745d47c) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
-Start importing Assets/Prefabs/Buttons/FlowerButton.prefab using Guid(4996456e6cae01742830cf6f5745d47c) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'fa123f1ed451562d0047437cb88b50b7') in 0.0361113 seconds
-Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 10
+  Time since last request: 43792.547887 seconds.
+  path: Assets/Scripts/CustomNetworkRoomPlayer.cs
+  artifactKey: Guid(b387fe2fb22af244babb88d8d6421a45) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Scripts/CustomNetworkRoomPlayer.cs using Guid(b387fe2fb22af244babb88d8d6421a45) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'eaee881882f181c8dee8db5a456317af') in 0.0040536 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
 
 ========================================================================
 Received Import Request.
-  Time since last request: 0.000016 seconds.
-  path: Assets/Prefabs/Buttons/PonButton.prefab
-  artifactKey: Guid(0abca03690fa661438d6e6bf05e45cc7) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
-Start importing Assets/Prefabs/Buttons/PonButton.prefab using Guid(0abca03690fa661438d6e6bf05e45cc7) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'dea002c72a07133934f11e397e77e051') in 0.0018874 seconds
-Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 10
+  Time since last request: 1012.095129 seconds.
+  path: Assets/Prefabs/GameUI/EnemyHaipaiShimo.prefab
+  artifactKey: Guid(b028b8257f53cd24d974afe5c2296bca) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Prefabs/GameUI/EnemyHaipaiShimo.prefab using Guid(b028b8257f53cd24d974afe5c2296bca) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '353054a65147c32aafcbd5e12459edd1') in 0.0328759 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 9
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000019 seconds.
+  path: Assets/Prefabs/GameUI/EnemyHaipaiToi.prefab
+  artifactKey: Guid(fdf3e683113453944bdc0503a4920d2e) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Prefabs/GameUI/EnemyHaipaiToi.prefab using Guid(fdf3e683113453944bdc0503a4920d2e) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'ed98dcb91a68b71d0cf30d5eb5005279') in 0.0019562 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 9
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000030 seconds.
+  path: Assets/Prefabs/GameUI/GameStatusUI.prefab
+  artifactKey: Guid(6e7db5b48f59fe34d9459ed757eca548) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Prefabs/GameUI/GameStatusUI.prefab using Guid(6e7db5b48f59fe34d9459ed757eca548) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '6d28038eea11409c6f66d38356f2b96f') in 0.0019815 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 5
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000015 seconds.
+  path: Assets/Prefabs/GameUI/EnemyKawaShimo.prefab
+  artifactKey: Guid(6d4195b96be738440a69511b77c64824) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Prefabs/GameUI/EnemyKawaShimo.prefab using Guid(6d4195b96be738440a69511b77c64824) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '6972d4a05bb368658d1ac9a9a33ffc6f') in 0.0018114 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 9
+
+========================================================================
+Received Import Request.
+  Time since last request: 3.342327 seconds.
+  path: Assets/Prefabs/GameUI/EnemyFlowerField2.prefab
+  artifactKey: Guid(49384d9a205d6944abe3d544b1f29462) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/Prefabs/GameUI/EnemyFlowerField2.prefab using Guid(49384d9a205d6944abe3d544b1f29462) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'fd735b9f2beaed364c6ce50cbcf0de76') in 0.017031 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 20
 
 Editor requested this worker to shutdown with reason: Scaling down because of idle timeout
 AssetImportWorker is now disconnected from the server

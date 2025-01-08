@@ -5,6 +5,7 @@ using System;
 using UnityEngine.UI;
 using static UnityEngine.Rendering.DebugUI.Table;
 using System.Collections;
+using Game.Shared;
 
 public class TileGrid : MonoBehaviour
 {
@@ -220,6 +221,73 @@ public class TileGrid : MonoBehaviour
 
         ArrangeChildrenByIndex();
         Debug.Log("Completed ArrangeChildrenByName.");
+    }
+
+    public void DestoryByTileId(int tileId)
+    {
+        Debug.Log($"[DestoryByTileId] Called with tileId: {tileId}");
+
+        if (!TileDictionary.NumToString.ContainsKey(tileId))
+        {
+            Debug.LogError($"[DestoryByTileId] Invalid tileId: {tileId}. Key not found in TileDictionary.NumToString.");
+            return;
+        }
+
+        var tileName = TileDictionary.NumToString[tileId];
+        Debug.Log($"[DestoryByTileId] Mapped tileId {tileId} to tileName: {tileName}");
+
+        if (LastTsumoTileObject != null && LastTsumoTileObject.name.Substring(0, 2) == tileName)
+        {
+            Debug.Log($"[DestoryByTileId] Destroying LastTsumoTileObject: {LastTsumoTileObject.name}");
+            Destroy(LastTsumoTileObject);
+            LastTsumoTileObject = null;
+        }
+        else
+        {
+            Debug.Log($"[DestoryByTileId] Searching indexToChild for tileName: {tileName}");
+            for (int i = 0; i < indexToChild.Count; i++)
+            {
+                if (indexToChild[i] == null)
+                {
+                    Debug.Log($"[DestoryByTileId] indexToChild[{i}] is null. Skipping.");
+                    continue;
+                }
+
+                Debug.Log($"[DestoryByTileId] Checking indexToChild[{i}]: {indexToChild[i].name}");
+                if (indexToChild[i].name.Substring(0, 2) == tileName)
+                {
+                    Debug.Log($"[DestoryByTileId] Match found. Destroying indexToChild[{i}]: {indexToChild[i].name}");
+                    Destroy(indexToChild[i]);
+                    indexToChild[i] = null;
+                    break;
+                }
+            }
+        }
+
+        Debug.Log("[DestoryByTileId] Calling ArrangeChildrenByIndexAndName.");
+        ArrangeChildrenByIndexAndName();
+        Debug.Log("[DestoryByTileId] Completed.");
+    }
+
+
+    public void ShowTedashiByTileId(int tileId)
+    {
+        if (LastTsumoTileObject == null)
+        {
+            StartCoroutine(ShowTedashiCoroutine());
+        }
+        else
+        {
+            if(LastTsumoTileObject.name.Substring(0, 2) != TileDictionary.NumToString[tileId])
+            {
+                StartCoroutine(ShowTedashiCoroutine());
+            }
+            else
+            {
+                Destroy(LastTsumoTileObject);
+                LastTsumoTileObject = null;
+            }
+        }
     }
 
     public void ShowTedashi(bool IsTedashi)
