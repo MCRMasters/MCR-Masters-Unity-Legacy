@@ -8,6 +8,7 @@ using Game.Shared;
 using System.Collections;
 using DataTransfer;
 using Mirror.BouncyCastle.Security;
+using Unity.VisualScripting;
 
 
 
@@ -76,6 +77,16 @@ public class ServerManager : NetworkBehaviour
     {
         Debug.Log($"[FinalizeRoundScore] Starting score finalization for Player Name: {PlayerManagers[playerIndex].PlayerName}, Player {playerIndex}.");
 
+        Hand newHand = new Hand(handList[playerIndex]);
+        if (winningCondition.IsDiscarded)
+        {
+            if (winningCondition.WinningTile < 0 || winningCondition.WinningTile >= 34)
+            {
+                return;
+            }
+            newHand.ClosedTiles[winningCondition.WinningTile]++;
+        }
+
         // HandData 생성
         HandData handData = HandConverter.ConvertToHandData(handList[playerIndex]);
         if (winningCondition.IsDiscarded)
@@ -85,6 +96,7 @@ public class ServerManager : NetworkBehaviour
                 return;
             }
             handData.ClosedTiles[winningCondition.WinningTile]++;
+            handData.WinningTile = winningCondition.WinningTile;
         }
         Debug.Log($"[FinalizeRoundScore] HandData created for Player {playerIndex}.\n HandData : {handData}");
 
@@ -110,10 +122,15 @@ public class ServerManager : NetworkBehaviour
             Debug.Log($"[FinalizeRoundScore] Total score {totalScore} is less than minimum required {MINIMUM_HU_SCORE}. Exiting.");
             return;
         }
+        totalScore += handList[playerIndex].FlowerPoint;
+        if (handList[playerIndex].FlowerPoint > 0)
+            huYakuScoreArray.Add(new YakuScoreData { Score = handList[playerIndex].FlowerPoint, YakuId = -1 });
         CalculateScoreAndUpdate(playerIndex, totalScore);
         // 초기화
         popupResponses = 0;
         Debug.Log($"[FinalizeRoundScore] Sending popup to all clients. Total Players: {NetworkServer.connections.Count}");
+
+        
 
         // 모든 클라이언트에 점수 데이터 전송
         foreach (var conn in NetworkServer.connections)
@@ -123,12 +140,13 @@ public class ServerManager : NetworkBehaviour
                 Debug.LogWarning($"[FinalizeRoundScore] Connection {conn.Key} has no valid identity. Skipping.");
                 continue;
             }
-
+            
             PlayerManager playerManager = conn.Value.identity.GetComponent<PlayerManager>();
             if (playerManager != null)
             {
                 Debug.Log($"[FinalizeRoundScore] Sending TargetShowRoundScore to PlayerManager of connection {conn.Key}.");
-                playerManager.TargetShowRoundScore(conn.Value, playerIndex, huYakuScoreArray, totalScore);
+                HandData copyHandData = handData.DeepCopy();
+                playerManager.TargetShowRoundScore(conn.Value, playerIndex, huYakuScoreArray, totalScore, copyHandData);
             }
             else
             {
@@ -220,7 +238,7 @@ public class ServerManager : NetworkBehaviour
 
         TotalActionPriorityList = new List<ActionPriorityInfo>();
         SelectedActionPrioritySet = new HashSet<ActionPriorityInfo>();
-
+        SelectedPriorityset = new HashSet<int>();
         TotalActionPriorityList.AddRange(GetPossibleHuChoice(tileId, playerWindIndex));
         TotalActionPriorityList.AddRange(GetPossibleKanChoices(tileId, playerWindIndex));
         TotalActionPriorityList.AddRange(GetPossibleFlowerChoices(tileId, playerWindIndex));
@@ -234,7 +252,7 @@ public class ServerManager : NetworkBehaviour
         //}
     }
 
-    private void DoTsumo(int playerWindIndex, bool IsReplacement)
+    private void DoTsumo(int playerWindIndex, bool IsReplacement, bool isKan)
     {
         List<int> drawnTiles = null;
         if (IsReplacement)
@@ -263,7 +281,7 @@ public class ServerManager : NetworkBehaviour
             Debug.LogError($"[ProceedNextTurn] Player {playerWindIndex}: Failed to tsumo tile {tile}. TsumoResult: {tsumoResult}");
             return;
         }
-
+        winningCondition = new WinningCondition();
         winningCondition.WinningTile = tile;
         winningCondition.IsDiscarded = false;
         if (tile >= 0 && tile < 34)
@@ -277,7 +295,8 @@ public class ServerManager : NetworkBehaviour
         {
             winningCondition.IsLastTileInTheGame = true;
         }
-
+        winningCondition.IsReplacementTile = isKan;
+        winningCondition.IsRobbingTheKong = false;
 
         // Tsumo 호출 (TargetPerformTsumo 사용)
         Debug.Log($"[ProceedNextTurn] Sending Tsumo tile {TileDictionary.NumToString[tile]} to Player {playerWindIndex}.");
@@ -305,7 +324,7 @@ public class ServerManager : NetworkBehaviour
         Debug.Log($"[ProceedNextTurn] Next turn for playerWindIndex: {playerWindIndex}, playerIndex: {PlayerManagers[playerWindIndex].PlayerIndex}");
 
 
-        DoTsumo(playerWindIndex, false);
+        DoTsumo(playerWindIndex, false, false);
     }
 
     private int GetPriorityFromWind(int playerWindIndex)
@@ -352,7 +371,7 @@ public class ServerManager : NetworkBehaviour
     private List<ActionPriorityInfo> GetPossiblePonChoice(int tileId, int playerWindIndex)
     {
         List<ActionPriorityInfo> resultList = new List<ActionPriorityInfo>();
-        if (winningCondition == null ||  !winningCondition.IsDiscarded || playerWindIndex == CurrentPlayerWindIndex || tileId < 0 || tileId >= 34)
+        if (winningCondition == null ||  !winningCondition.IsDiscarded || playerWindIndex == CurrentPlayerWindIndex || tileId < 0 || tileId >= 34 || winningCondition.IsLastTileInTheGame)
         {
             return resultList;
         }
@@ -367,7 +386,7 @@ public class ServerManager : NetworkBehaviour
     private List<ActionPriorityInfo> GetPossibleKanChoices(int tileId, int playerWindIndex)
     {
         List<ActionPriorityInfo> resultList = new List<ActionPriorityInfo>();
-        if (winningCondition == null || tileId < 0 || tileId >= 34)
+        if (winningCondition == null || tileId < 0 || tileId >= 34 || winningCondition.IsLastTileInTheGame)
         {
             return resultList;
         }
@@ -384,6 +403,32 @@ public class ServerManager : NetworkBehaviour
             {
                 resultList.Add(new ActionPriorityInfo(ActionType.KAN, GetPriorityFromWind(playerWindIndex), tileId));
             }
+            foreach (Block block in handList[playerWindIndex].CallBlocks)
+            {
+                // 현재 블록 정보 출력
+                Debug.Log($"[GetPossibleKanChoices] Checking Block - Type: {block.Type}, Tile: {block.Tile}, PlayerIndex: {playerWindIndex}");
+
+                // 배열 범위 유효성 검사
+                if (block.Tile < 0 || block.Tile >= handList[playerWindIndex].ClosedTiles.Count)
+                {
+                    Debug.LogWarning($"[GetPossibleKanChoices] Invalid Tile Index: {block.Tile} for PlayerIndex: {playerWindIndex}");
+                    continue; // 인덱스가 잘못되면 다음 블록으로 넘어감
+                }
+
+                // 조건 검사: TRIPLET 타입 + ClosedTiles 수량 1개
+                if (block.Type == BlockType.TRIPLET && handList[playerWindIndex].ClosedTiles[block.Tile] == 1)
+                {
+                    Debug.Log($"[GetPossibleKanChoices] TRIPLET block with Tile {block.Tile} found. Adding to resultList.");
+
+                    // ActionPriorityInfo 추가
+                    resultList.Add(new ActionPriorityInfo(ActionType.KAN, GetPriorityFromWind(playerWindIndex), block.Tile));
+                }
+                else
+                {
+                    Debug.Log($"[GetPossibleKanChoices] Block {block.Tile} is not eligible for KAN. Type: {block.Type}, ClosedTile Count: {handList[playerWindIndex].ClosedTiles[block.Tile]}");
+                }
+            }
+
             // shominkan
         }
         return resultList;
@@ -406,7 +451,7 @@ public class ServerManager : NetworkBehaviour
     private List<ActionPriorityInfo> GetPossibleChiiChoices(int tileId, int playerWindIndex)
     {
         List<ActionPriorityInfo> resultList = new List<ActionPriorityInfo>();
-        if (winningCondition == null || !winningCondition.IsDiscarded ||  GetPriorityFromWind(playerWindIndex) != 1 || tileId < 0 || tileId >= 27)
+        if (winningCondition == null || !winningCondition.IsDiscarded ||  GetPriorityFromWind(playerWindIndex) != 1 || tileId < 0 || tileId >= 27 || winningCondition.IsLastTileInTheGame)
         {
             return resultList;
         }
@@ -439,7 +484,7 @@ public class ServerManager : NetworkBehaviour
 
     private List<ActionPriorityInfo> TotalActionPriorityList;
     private HashSet<ActionPriorityInfo> SelectedActionPrioritySet;
-
+    private HashSet<int> SelectedPriorityset;
     private void DebugTotalActionPriorityList()
     {
         if (TotalActionPriorityList == null || TotalActionPriorityList.Count == 0)
@@ -460,9 +505,13 @@ public class ServerManager : NetworkBehaviour
         if (handList[actionWindIndex] == null)
             return;
         handList[actionWindIndex].DiscardOneTile(34);
-        DoTsumo(actionWindIndex, true);
+        handList[actionWindIndex].FlowerPoint += 1;
+        DoTsumo(actionWindIndex, true, false);
     }
 
+    
+
+    
 
     public IEnumerator ReceiveActionDecisionCoroutine(int playerWindIndex, ActionPriorityInfo actionPriorityInfo, int actionTurnId, int tileId)
     {
@@ -477,6 +526,12 @@ public class ServerManager : NetworkBehaviour
         int priority = actionPriorityInfo.Priority;
         Debug.Log($"[ReceiveActionDecisionCoroutine] Priority of received action: {priority}");
 
+        if (SelectedPriorityset.Contains(priority))
+        {
+            yield break;
+        }
+        SelectedPriorityset.Add(priority);
+
         List<ActionPriorityInfo> NewTotalList = new List<ActionPriorityInfo>();
         foreach (ActionPriorityInfo action in TotalActionPriorityList)
         {
@@ -488,22 +543,22 @@ public class ServerManager : NetworkBehaviour
             NewTotalList.Add(action);
         }
 
+
         DebugTotalActionPriorityList();
         TotalActionPriorityList = NewTotalList;
 
-        if (actionPriorityInfo.Type != ActionType.SKIP)
+        if (actionPriorityInfo.Type != ActionType.SKIP && actionPriorityInfo.Type != ActionType.TIMEOUT)
         {
             Debug.Log($"[ReceiveActionDecisionCoroutine] Adding action to TotalActionPriorityList: {actionPriorityInfo}");
             TotalActionPriorityList.Add(actionPriorityInfo);
             SelectedActionPrioritySet.Add(actionPriorityInfo);
         }
 
-        if (actionPriorityInfo.Type == ActionType.TIMEOUT)
-        {
-            PlayerManagers[GetWindFromPriority(priority)].ForceDiscardTile(TileDictionary.NumToString[winningCondition.WinningTile], true);
-            DoDiscard(winningCondition.WinningTile, GetWindFromPriority(priority));
-            yield break;
-        }
+
+        string listContent = string.Join(", ", TotalActionPriorityList.Select((action, index) =>
+$"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority: {action.Priority}]"));
+
+        Debug.Log($"[ReceiveActionDecisionCoroutine] TotalActionPriorityList Count: {TotalActionPriorityList.Count} | Contents: {listContent}");
 
         TotalActionPriorityList.Sort();
         DebugTotalActionPriorityList();
@@ -516,8 +571,40 @@ public class ServerManager : NetworkBehaviour
                 Debug.Log($"[ReceiveActionDecisionCoroutine] Adding tileId {tileId} to kawaTilesList for playerWindIndex: {playerWindIndex}");
                 kawaTilesList[playerWindIndex].Add(tileId);
 
+                for (int i = 0; i < MaxPlayers; i++)
+                {
+                    PlayerManagers[i].TargetClearButtons(PlayerManagers[i].connectionToClient);
+                    PlayerManagers[i].TargetSetRemainingTimeZero(PlayerManagers[i].connectionToClient);
+                }
+
                 Debug.Log($"[ReceiveActionDecisionCoroutine] Proceeding to next turn for playerWindIndex: {playerWindIndex}");
-                ProceedNextTurn(playerWindIndex);
+                if (winningCondition.IsRobbingTheKong == true)
+                {
+                    DoTsumo(playerWindIndex, true, true);
+                }
+                else
+                {
+                    ProceedNextTurn(playerWindIndex);
+                }
+            }
+            else
+            {
+                if(actionPriorityInfo.Type == ActionType.TIMEOUT)
+                {
+                    for (int i = 0; i < MaxPlayers; ++i)
+                    {
+                        if (PlayerManagers[i] != null && i == playerWindIndex)
+                        {
+                            if (winningCondition.IsDiscarded == false)
+                            {
+                                int discardTileId = handList[i].GetRightmostTileId();
+                                PlayerManagers[i].ForceDiscardByTileId(discardTileId);
+                                DoDiscard(discardTileId, playerWindIndex);
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
         else if (SelectedActionPrioritySet.Contains(TotalActionPriorityList[0]))
@@ -525,7 +612,15 @@ public class ServerManager : NetworkBehaviour
             var action = TotalActionPriorityList[0];
             int actionWindIndex = GetWindFromPriority(action.Priority);
             Debug.Log($"[ReceiveActionDecisionCoroutine] Highest priority action: {action}, actionWindIndex: {actionWindIndex}");
-
+            ActionTurnId++;
+            for (int i=0;i< MaxPlayers; ++i)
+            {
+                if (PlayerManagers[i] != null)
+                {
+                    PlayerManagers[i].TargetClearButtons(PlayerManagers[i].connectionToClient);
+                    PlayerManagers[i].RpcSetRemainingTimeDefault();
+                }
+            }
             if (action.Type == ActionType.HU)
             {
                 Debug.Log("[ReceiveActionDecisionCoroutine] Action is HU. Clearing buttons and finalizing round score.");
@@ -536,10 +631,8 @@ public class ServerManager : NetworkBehaviour
                         Debug.Log($"[ReceiveActionDecisionCoroutine] PlayerManagers[{i}] is null. Skipping.");
                         continue;
                     }
-
                     PlayerManagers[i].TargetClearButtons(PlayerManagers[i].connectionToClient);
                 }
-
                 ScoreSourcePlayerWindIndex = CurrentPlayerWindIndex;
                 FinalizeRoundScore(actionWindIndex);
             }
@@ -570,26 +663,343 @@ public class ServerManager : NetworkBehaviour
             }
             else
             {
-                Debug.Log($"[ReceiveActionDecisionCoroutine] Action is CALL. Executing TargetClearButtonsAndDoCallAction for all players.");
-                for (int i = 0; i < MaxPlayers; i++)
-                {
-                    if (PlayerManagers[i] == null)
-                    {
-                        Debug.Log($"[ReceiveActionDecisionCoroutine] PlayerManagers[{i}] is null. Skipping.");
-                        continue;
-                    }
-
-                    PlayerManagers[i].TargetClearButtonsAndDoCallAction(
-                        PlayerManagers[i].connectionToClient,
-                        TotalActionPriorityList[0],
-                        tileId,
-                        playerWindToIndex[actionWindIndex]
-                    );
-                }
+                Debug.Log($"[ReceiveActionDecisionCoroutine] Action is CALL. Executing ReceiveActionDecisionCoroutine.");
+                StartCoroutine(ReceiveActionDecisionCoroutineSub(tileId, actionWindIndex, action));
             }
         }
 
         Debug.Log("[ReceiveActionDecisionCoroutine] Completed.");
+    }
+
+
+    private int actionCompletionResponses = 0;  // 완료 응답 카운터
+
+    private bool ApplyCallResultToServer(ActionPriorityInfo action, int sourceTileId)
+    {
+        if (action.Type == ActionType.CHII)
+        {
+            int playerWindIndex = GetWindFromPriority(action.Priority);
+            handList[playerWindIndex].ApplyChii(sourceTileId, action.TileId);
+            for (int i = action.TileId; i < action.TileId + 3; ++i)
+            {
+                if (i == action.TileId)
+                    continue;
+                visibleTileCounts[i] += 1;
+            }
+            PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(false);
+            CurrentPlayerWindIndex = playerWindIndex;
+            PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(true);
+            return false;
+        }
+        else if (action.Type == ActionType.PON)
+        {
+            int playerWindIndex = GetWindFromPriority(action.Priority);
+            handList[playerWindIndex].ApplyPon(sourceTileId, action.TileId, (BlockSource)action.Priority);
+            visibleTileCounts[action.TileId] += 2;
+            PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(false);
+            CurrentPlayerWindIndex = playerWindIndex;
+            PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(true);
+            return false;
+        }
+        else if (action.Type == ActionType.KAN)
+        {
+            int playerWindIndex = GetWindFromPriority(action.Priority);
+            Debug.Log($"[ApplyCallResultToServer] playerWindIndex: {playerWindIndex}, Priority: {action.Priority}, sourceTileId: {sourceTileId}, TileId: {action.TileId}");
+
+            // 유효성 검사 및 디버깅
+            if (playerWindIndex < 0 || playerWindIndex >= handList.Length)
+            {
+                Debug.LogError($"[ApplyCallResultToServer] Invalid playerWindIndex: {playerWindIndex}. HandList Length: {handList.Length}");
+                return false;
+            }
+            int kanTileId = action.TileId;
+            if (action.Priority == 0)
+            {
+                handList[playerWindIndex].PrintHand();
+                handList[playerWindIndex].PrintHandNames();
+                // 암깡(AnKan) 처리
+                if (handList[playerWindIndex].ClosedTiles[kanTileId] == 4)
+                {
+                    Debug.Log($"[ApplyCallResultToServer] Applying AnKan: PlayerIndex {playerWindIndex}, kanTileId {kanTileId}, TileId {action.TileId}");
+                    handList[playerWindIndex].ApplyAnKan(kanTileId, action.TileId, (BlockSource)action.Priority);
+                    return false;
+                }
+                // 소명깡(ShominKan) 처리
+                else if (handList[playerWindIndex].OpenedTiles[kanTileId] == 3)
+                {
+                    Debug.Log($"[ApplyCallResultToServer] Applying ShominKan: PlayerIndex {playerWindIndex}, SourceTileId {kanTileId}, TileId {action.TileId}");
+                    handList[playerWindIndex].ApplyShominKan(kanTileId, action.TileId, (BlockSource)action.Priority);
+                    visibleTileCounts[action.TileId] += 1;
+                    return true;
+                }
+                // 처리 실패
+                else
+                {
+                    Debug.Log($"[ApplyCallResultToServer] Error in kan. ClosedTiles or OpenedTiles count is invalid.");
+                    return false;
+                }
+            }
+            else
+            {
+                Debug.Log($"[ApplyCallResultToServer] action priority: {action.Priority}");
+                handList[playerWindIndex].ApplyDaiminKan(kanTileId, action.TileId, (BlockSource)action.Priority);
+                visibleTileCounts[action.TileId] += 3;
+                PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(false);
+                CurrentPlayerWindIndex = playerWindIndex;
+                PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(true);
+                return false;
+            }
+
+        }
+        return false;
+    }
+
+
+
+    private IEnumerator WaitForAllPlayersActionCompletion(ActionPriorityInfo action, int sourceTileId, KanType kanType)
+    {
+        actionCompletionResponses = 0;  // 응답 수 초기화
+
+        // 모든 플레이어의 응답을 기다림
+        float timeout = 5f;  // 최대 대기 시간 (초)
+        float elapsedTime = 0f;
+
+        while (actionCompletionResponses < MaxPlayers && elapsedTime < timeout)
+        {
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        if (actionCompletionResponses >= MaxPlayers)
+        {
+            Debug.Log("[ServerManager] All players have completed their actions.");
+        }
+        else
+        {
+            Debug.LogWarning("[ServerManager] Not all players responded in time.");
+        }
+
+        // 다음 로직 실행
+        ProceedAfterAction(action, sourceTileId, kanType);
+    }
+
+
+
+    public void ReceiveTimeoutDecision(int actionTurnId, int playerWindIndex)
+    {
+        Debug.Log($"[ReceiveTimeoutDecision] actionTurnId: {actionTurnId}, ActionTurnId now: {ActionTurnId}, winningCondition.IsDiscarded: {winningCondition.IsDiscarded}");
+        if (actionTurnId != ActionTurnId)
+            return;
+        actionTurnId++;
+        for (int i = 0; i < MaxPlayers; ++i)
+        {
+            if (PlayerManagers[i] != null && i == playerWindIndex)
+            {
+                if (winningCondition.IsDiscarded == false)
+                {
+                    int tileId = handList[i].GetRightmostTileId();
+                    PlayerManagers[i].ForceDiscardByTileId(tileId);
+                    DoDiscard(tileId, playerWindIndex);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void ProceedAfterAction(ActionPriorityInfo action, int sourceTileId, KanType kanType)
+    {
+        ActionTurnId++;
+        ApplyCallResultToServer(action, sourceTileId);
+        if (action.Type == ActionType.CHII)
+        {
+            PlayerManagers[CurrentPlayerWindIndex].TargetWaitPlayerDecision(PlayerManagers[CurrentPlayerWindIndex].connectionToClient, ActionTurnId, CurrentPlayerWindIndex);
+        }
+        else if (action.Type == ActionType.PON)
+        {
+            PlayerManagers[CurrentPlayerWindIndex].TargetWaitPlayerDecision(PlayerManagers[CurrentPlayerWindIndex].connectionToClient, ActionTurnId, CurrentPlayerWindIndex);
+        }
+        else if (action.Type == ActionType.KAN)
+        {
+            if (kanType == KanType.SHOMINKAN)
+            {
+                DoShominKan(CurrentPlayerWindIndex, action);
+            }
+            else if (kanType == KanType.ANKAN || kanType == KanType.DAIMINKAN)
+            {
+                DoTsumo(CurrentPlayerWindIndex, true, true);
+            }
+            else
+            {
+                Debug.LogError("[ProceedAfterAction] KanType error. actiontype is kan but kantype is not kan.");
+            }
+        }
+    }
+
+    private void DoShominKan(int playerWindIndex, ActionPriorityInfo action)
+    {
+        ActionTurnId++;
+        // TargetShominKanTile
+
+        for (int i = 0; i < PlayerManagers.Length; i++)
+        {
+            PlayerManagers[i].TargetShominKanTile(PlayerManagers[i].connectionToClient, action.TileId, PlayerManagers[playerWindIndex].PlayerIndex);
+        }
+
+        // CheckActionAfterShominkan
+        CheckActionAfterShominKan(action.TileId, playerWindIndex);
+    }
+
+
+    private void CheckActionAfterShominKan(int tileId, int playerWindIndex)
+    {
+        Debug.Log($"[CheckActionAfterShominKan] Checking Hu for Player {playerWindIndex} shominkan with tileId: {tileId}");
+
+        List<ActionPriorityInfo>[] ActionPriorityList = new List<ActionPriorityInfo>[MaxPlayers];
+        for (int i = 0; i < MaxPlayers; i++)
+        {
+            ActionPriorityList[i] = new List<ActionPriorityInfo>();
+        }
+        TotalActionPriorityList = new List<ActionPriorityInfo>();
+        SelectedActionPrioritySet = new HashSet<ActionPriorityInfo>();
+        SelectedPriorityset = new HashSet<int>();
+        winningCondition = new WinningCondition();
+        winningCondition.WinningTile = tileId;
+        winningCondition.IsDiscarded = true;
+        winningCondition.IsLastTileInTheGame = false;
+        winningCondition.IsLastTileOfItsKind = false;
+        winningCondition.IsReplacementTile = false;
+        winningCondition.IsRobbingTheKong = true;
+
+        for (int i = 0; i < MaxPlayers; i++)
+        {
+            if (i == playerWindIndex) continue;
+            ActionPriorityList[i].AddRange(GetPossibleHuChoice(tileId, i));
+            ActionPriorityList[i].Sort();
+            TotalActionPriorityList.AddRange(ActionPriorityList[i]);
+        }
+
+        TotalActionPriorityList.Sort();
+        string listContent = string.Join(", ", TotalActionPriorityList.Select((action, index) =>
+$"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority: {action.Priority}]"));
+
+        Debug.Log($"[CheckActionAfterShominKan] TotalActionPriorityList Count: {TotalActionPriorityList.Count} | Contents: {listContent}");
+        if (TotalActionPriorityList.Count > 0)
+        {
+            Debug.Log($"[CheckActionAfterShominKan] Hu logic for Player {playerWindIndex} will be implemented here.");
+
+
+            for (int i = 0; i < MaxPlayers; ++i)
+            {
+                if (ActionPriorityList[i].Count == 0)
+                {
+                    continue;
+                }
+                PlayerManagers[i].TargetShowActionButtons(PlayerManagers[i].connectionToClient, playerWindIndex, ActionPriorityList[i], ActionTurnId, tileId);
+            }
+        }
+        else
+        {
+            Debug.Log($"[CheckActionAfterShominKan] No call or hu. DoTsumo for Player {(Wind)Wind.EAST + playerWindIndex}.");
+            //kawaTilesList[playerWindIndex].Add(tileId);
+            //ProceedNextTurn(playerWindIndex);
+            DoTsumo(playerWindIndex, true, true);
+        }
+    }
+
+
+    public void NotifyActionCompleted()
+    {
+        actionCompletionResponses++;
+        Debug.Log($"[ServerManager] Received action completion. Total: {actionCompletionResponses}/{MaxPlayers}");
+    }
+
+    // 기존 TargetRPC 호출 수정
+    private IEnumerator ReceiveActionDecisionCoroutineSub(int tileId, int actionWindIndex, ActionPriorityInfo action)
+    {
+        Debug.Log($"[ReceiveActionDecisionCoroutine] Action is CALL. Executing TargetClearButtonsAndDoCallAction for all players.");
+        ActionTurnId++;
+        KanType kanType = KanType.ISNOTKAN;
+        if (action.Type == ActionType.KAN)
+        {
+            if (action.Priority == 0)
+            {
+                if (handList[actionWindIndex].ClosedTiles[action.TileId] == 4)
+                {
+                    kanType = KanType.ANKAN;
+                }
+                else
+                {
+                    kanType = KanType.SHOMINKAN;
+                }
+            }
+            else
+            {
+                kanType = KanType.DAIMINKAN;
+            }
+        }
+        for (int i = 0; i < MaxPlayers; i++)
+        {
+            if (PlayerManagers[i] == null)
+            {
+                Debug.Log($"[ReceiveActionDecisionCoroutine] PlayerManagers[{i}] is null. Skipping.");
+                continue;
+            }
+            if (action.Type == ActionType.KAN && kanType == KanType.ANKAN)
+            {
+                if (i == CurrentPlayerWindIndex)
+                {
+                    PlayerManagers[i].TargetClearButtonsAndDoCallAction(
+                        PlayerManagers[i].connectionToClient,
+                        action,
+                        tileId,
+                        playerWindToIndex[actionWindIndex],
+                        playerWindToIndex[CurrentPlayerWindIndex],
+                        winningCondition.IsDiscarded,
+                        kanType
+                    );
+                }
+                else
+                {
+                    ActionPriorityInfo hideTileIdAction = new ActionPriorityInfo(action.Type, action.Priority, -1);
+                    PlayerManagers[i].TargetClearButtonsAndDoCallAction(
+                        PlayerManagers[i].connectionToClient,
+                        hideTileIdAction,
+                        -1,
+                        playerWindToIndex[actionWindIndex],
+                        playerWindToIndex[CurrentPlayerWindIndex],
+                        winningCondition.IsDiscarded,
+                        kanType
+                    );
+                }
+            }
+            else if(action.Type == ActionType.KAN && kanType == KanType.SHOMINKAN)
+            {
+                PlayerManagers[i].TargetClearButtonsAndDoCallAction(
+                    PlayerManagers[i].connectionToClient,
+                    action,
+                    action.TileId,
+                    playerWindToIndex[actionWindIndex],
+                    playerWindToIndex[CurrentPlayerWindIndex],
+                    winningCondition.IsDiscarded,
+                    kanType
+                );
+            }
+            else
+            {
+                PlayerManagers[i].TargetClearButtonsAndDoCallAction(
+                    PlayerManagers[i].connectionToClient,
+                    action,
+                    tileId,
+                    playerWindToIndex[actionWindIndex],
+                    playerWindToIndex[CurrentPlayerWindIndex],
+                    winningCondition.IsDiscarded,
+                    kanType
+                );
+            }
+        }
+        
+        // 모든 클라이언트의 응답 대기
+        yield return StartCoroutine(WaitForAllPlayersActionCompletion(action, tileId, kanType));
     }
 
 
@@ -605,6 +1015,7 @@ public class ServerManager : NetworkBehaviour
         }
         TotalActionPriorityList = new List<ActionPriorityInfo>();
         SelectedActionPrioritySet = new HashSet<ActionPriorityInfo>();
+        SelectedPriorityset = new HashSet<int>();
         for (int i = 0; i < MaxPlayers; i++)
         {
             if (i == playerWindIndex) continue;
@@ -617,7 +1028,10 @@ public class ServerManager : NetworkBehaviour
         }
 
         TotalActionPriorityList.Sort();
+        string listContent = string.Join(", ", TotalActionPriorityList.Select((action, index) =>
+$"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority: {action.Priority}]"));
 
+        Debug.Log($"[CheckActionAfterDiscard] TotalActionPriorityList Count: {TotalActionPriorityList.Count} | Contents: {listContent}");
         if (TotalActionPriorityList.Count > 0)
         {
             Debug.Log($"[CheckCall] Call logic for Player {playerWindIndex} will be implemented here.");
@@ -646,6 +1060,8 @@ public class ServerManager : NetworkBehaviour
         PlayerManagers[playerWindIndex].SetPlayerTurn(false);
         handList[playerWindIndex].DiscardOneTile(tileId);
         ActionTurnId++;
+
+        winningCondition = new WinningCondition();
         winningCondition.WinningTile = tileId;
         winningCondition.IsDiscarded = true;
         if (tileId >= 0 && tileId < 34)
@@ -661,7 +1077,8 @@ public class ServerManager : NetworkBehaviour
         {
             winningCondition.IsLastTileInTheGame = true;
         }
-
+        winningCondition.IsReplacementTile = false;
+        winningCondition.IsRobbingTheKong = false;
 
         Debug.Log($"[DoDiscard] Updated hand for Player {playerWindIndex}. Remaining count for tileId {tileId}: {handList[playerWindIndex].ClosedTiles[tileId]}.");
 
@@ -1020,7 +1437,7 @@ public class ServerManager : NetworkBehaviour
             kawaTilesList[i] = new();
             visibleTileCounts[i] = 0;
         }
-        for (int tileNum = 0; tileNum < 9; tileNum++)
+        for (int tileNum = 0; tileNum < 4; tileNum++)
         //for (int tileNum = 0; tileNum < 34; tileNum++)
         {
             for (int i = 0; i < 4; i++)
@@ -1061,10 +1478,9 @@ public class ServerManager : NetworkBehaviour
     {
         if (tileDrawIndexRight - tileDrawIndexLeft + 1 < count)
         {
-            Debug.LogWarning("Not enough tiles left in the deck.");
+            Debug.LogWarning($"Not enough tiles left in the deck: {tileDrawIndexRight - tileDrawIndexLeft + 1}");
             return null;
-        }
-
+        }  
         var drawnTiles = tileDeck.GetRange(tileDrawIndexRight - count + 1, count);
         tileDrawIndexRight -= count;
         return drawnTiles;
@@ -1087,9 +1503,12 @@ public class ServerManager : NetworkBehaviour
     private void DealTilesToPlayersTest()
     {
         handList[0].DrawFirstHand(new List<int> { 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8 });
-        handList[1].DrawFirstHand(new List<int> { 0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33 });
-        handList[2].DrawFirstHand(new List<int> { 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33 });
-        handList[3].DrawFirstHand(new List<int> { 33, 27, 27, 27, 28, 28, 28, 29, 29, 29, 30, 30, 30 });
+        handList[1].DrawFirstHand(new List<int> { 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8 });
+        //handList[2].DrawFirstHand(new List<int> { 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8 });
+        //handList[3].DrawFirstHand(new List<int> { 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8 });
+        //handList[1].DrawFirstHand(new List<int> { 0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33 });
+        handList[2].DrawFirstHand(new List<int> { 0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33 });
+        handList[3].DrawFirstHand(new List<int> { 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32, 32, 33 });
         SpawnFirstHands();
     }
 

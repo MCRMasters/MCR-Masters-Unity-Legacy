@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Game.Shared;
+using UnityEngine;
 
 namespace DataTransfer
 {
@@ -43,6 +44,70 @@ namespace DataTransfer
         public int Tile;               // 타일 ID
         public int Source;             // BlockSource (enum -> int)
         public int SourceTileIndex;    // 출처 타일의 인덱스
+
+        public BlockData DeepCopy()
+        {
+            return new BlockData
+            {
+                Type = this.Type,
+                Tile = this.Tile,
+                Source = this.Source,
+                SourceTileIndex = this.SourceTileIndex
+            };
+        }
+
+
+        public override string ToString()
+        {
+            string result = "";
+
+            if ((BlockSource)Source != BlockSource.SELF)
+                result += "[";
+            else if ((BlockType)Type == BlockType.QUAD)
+                result += "{";
+
+            switch ((BlockType)Type)
+            {
+                case BlockType.PAIR:
+                    result += $"{TileDictionary.NumToString[Tile]}{TileDictionary.NumToString[Tile]}";
+                    break;
+
+                case BlockType.SEQUENCE:
+                    for (int i = 0; i < 3; i++)
+                        result += TileDictionary.NumToString[Tile + i];
+                    break;
+
+                case BlockType.TRIPLET:
+                    for (int i = 0; i < 3; i++)
+                        result += TileDictionary.NumToString[Tile];
+                    break;
+
+                case BlockType.QUAD:
+                    for (int i = 0; i < 4; i++)
+                        result += TileDictionary.NumToString[Tile];
+                    break;
+
+                case BlockType.SINGLETILE:
+                    result += TileDictionary.NumToString[Tile];
+                    break;
+
+                case BlockType.KNITTED:
+                    for (int i = 0; i < 3; i++)
+                        result += TileDictionary.NumToString[Tile + i * 3];
+                    break;
+
+                default:
+                    result += $"{(BlockType)Type} {TileDictionary.NumToString[Tile]} {(BlockSource)Source}";
+                    break;
+            }
+
+            if ((BlockSource)Source != BlockSource.SELF)
+                result += "]";
+            else if ((BlockType)Type == BlockType.QUAD)
+                result += "}";
+
+            return result;
+        }
     }
 
     // WinningConditionData 구조체
@@ -81,6 +146,75 @@ namespace DataTransfer
         public BlockData[] CallBlocks;      // 블록 데이터 (최대 14개)
 
         public int CallBlockCount;          // 실제 CallBlocks의 개수
+
+        public HandData DeepCopy()
+        {
+            HandData copy = new HandData
+            {
+                // ClosedTiles 배열 깊은 복사
+                ClosedTiles = (int[])this.ClosedTiles.Clone(),
+
+                // OpenedTiles 배열 깊은 복사
+                OpenedTiles = (int[])this.OpenedTiles.Clone(),
+
+                // WinningTile은 값형이므로 그대로 복사
+                WinningTile = this.WinningTile,
+
+                // CallBlocks 배열 깊은 복사
+                CallBlocks = this.CallBlocks != null
+                    ? this.CallBlocks.Select(cb => cb.DeepCopy()).ToArray()
+                    : new BlockData[14],
+
+                // CallBlockCount 값 복사
+                CallBlockCount = this.CallBlockCount
+            };
+
+            return copy;
+        }
+
+
+        public void PrintHand()
+        {
+            var closedTilesOutput = string.Join(" ",
+                ClosedTiles.Select((value, index) => index % 9 == 0 && index != 0 ? $"\n{value}" : value.ToString()));
+
+            var openedTilesOutput = string.Join(" ",
+                OpenedTiles.Select((value, index) => index % 9 == 0 && index != 0 ? $"\n{value}" : value.ToString()));
+
+            Debug.Log($"[PrintHand] Closed Tiles:\n{closedTilesOutput}\n[PrintHand] Opened Tiles:\n{openedTilesOutput}");
+            PrintCallBlocks();
+        }
+
+        public void PrintHandNames()
+        {
+            var closedTilesNames = string.Join(" ",
+                ClosedTiles.SelectMany((value, index) => Enumerable.Repeat(TileDictionary.NumToString[index], value)));
+
+            var openedTilesNames = string.Join(" ",
+                OpenedTiles.SelectMany((value, index) => Enumerable.Repeat(TileDictionary.NumToString[index], value)));
+
+            var winningTileName = WinningTile >= 0 && WinningTile < TileDictionary.NumToString.Count
+                ? TileDictionary.NumToString[WinningTile]
+                : "None";
+
+            Debug.Log($"[PrintHandNames] Closed Tiles: {closedTilesNames}\nOpened Tiles: {openedTilesNames}\nWinning Tile: {winningTileName}");
+            PrintCallBlocks();
+        }
+
+        public void PrintCallBlocks()
+        {
+            if (CallBlocks == null || CallBlockCount == 0)
+            {
+                Debug.Log("CallBlocks가 비어있습니다.");
+                return;
+            }
+
+            Debug.Log("CallBlocks 출력:");
+            for (int i = 0; i < CallBlockCount; i++)
+            {
+                Debug.Log(CallBlocks[i].ToString());
+            }
+        }
 
         public override string ToString()
         {

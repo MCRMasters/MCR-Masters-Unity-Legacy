@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Game.Shared
@@ -11,6 +12,7 @@ namespace Game.Shared
     {
         public static readonly Dictionary<int, string> dict = new Dictionary<int, string>
         {
+            { -1, "Flower Point" },
             { 0, "Chicken Hand" },
             { 1, "Chained Seven Pairs" },
             { 2, "Thirteen Orphans" },
@@ -161,6 +163,14 @@ namespace Game.Shared
         }
     }
 
+    public enum KanType
+    {
+        ISNOTKAN = -1,
+        ANKAN,
+        SHOMINKAN,
+        DAIMINKAN
+    }
+
     public enum ActionType 
     { 
         TIMEOUT = -2,
@@ -193,9 +203,13 @@ namespace Game.Shared
             {
                 return typeComparison;
             }
-
+            int PriorityComparision = Priority.CompareTo(other.Priority);
+            if (PriorityComparision != 0)
+            {
+                return PriorityComparision;
+            }
             // Type이 같으면 Priority 기준으로 정렬
-            return Priority.CompareTo(other.Priority);
+            return TileId.CompareTo(other.Priority);
         }
         public override string ToString()
         {
@@ -295,6 +309,7 @@ namespace Game.Shared
         }
     }
 
+    [System.Serializable]
     public class Hand
     {
         public List<int> ClosedTiles { get; private set; }
@@ -310,6 +325,22 @@ namespace Game.Shared
         {
             Initialize();
         }
+
+        
+        public Hand(Hand originalHand)
+        {
+            ClosedTiles = new List<int>(originalHand.ClosedTiles);
+            OpenedTiles = new List<int>(originalHand.OpenedTiles);
+            CallBlocks = originalHand.CallBlocks
+                                     .Select(block => new Block(block.Type, block.Tile, block.Source, block.SourceTileIndex))
+                                     .ToList();
+            FlowerPoint = originalHand.FlowerPoint;
+            WinningTile = originalHand.WinningTile;
+            YakuScoreList = new List<KeyValuePair<int, int>>(originalHand.YakuScoreList);
+            HighestScore = originalHand.HighestScore;
+            KeishikiTenpaiTiles = new List<int>(originalHand.KeishikiTenpaiTiles);
+        }
+
 
         private bool TileOutOfRange(int tile)
         {
@@ -328,6 +359,129 @@ namespace Game.Shared
             TilesLeftToDraw = 14;
         }
 
+        public int GetRightmostTileId()
+        {
+            if (WinningTile != -1)
+            {
+                return WinningTile;
+            }
+            for (int i = 34; i >= 0; --i)
+            {
+                if (ClosedTiles[i] > 0)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        public int ApplyAnKan(int sourceTileId, int startTileId, BlockSource blockSource)
+        {
+            if (TilesLeftToDraw != 0 || TileOutOfRange(sourceTileId) || TileOutOfRange(startTileId))
+            {
+                return -1;
+            }
+
+            OpenedTiles[startTileId] += 4;
+            ClosedTiles[startTileId] -= 4;
+            WinningTile = -1;
+            CallBlocks.Add(new Block(BlockType.QUAD, startTileId, BlockSource.SELF, 0));
+            TilesLeftToDraw += 1;
+
+            Debug.Log("[ApplyAnKan]");
+            PrintHand();
+            PrintHandNames();
+            return 0;
+        }
+
+        public int ApplyShominKan(int sourceTileId, int startTileId, BlockSource blockSource)
+        {
+            if (TilesLeftToDraw != 0 || TileOutOfRange(sourceTileId) || TileOutOfRange(startTileId))
+            {
+                return -1;
+            }
+            WinningTile = -1;
+            ClosedTiles[startTileId] -= 1;
+            OpenedTiles[startTileId] += 1;
+            TilesLeftToDraw += 1;
+
+            foreach (Block block in CallBlocks)
+            {
+                if (block != null)
+                {
+                    if (block.Type == BlockType.TRIPLET && block.Tile == startTileId)
+                    {
+                        block.Type = BlockType.QUAD;
+                        Debug.Log("[ApplyShominKan]");
+                        PrintHand();
+                        PrintHandNames();
+                        return 0;
+                    }
+                }
+            }
+            Debug.LogError("[ApplyShominKan] Failed.");
+            return -1;
+        }
+
+        public int ApplyDaiminKan(int sourceTileId, int startTileId, BlockSource blockSource)
+        {
+            if (TilesLeftToDraw != 1 || TileOutOfRange(sourceTileId) || TileOutOfRange(startTileId))
+            {
+                return -1;
+            }
+            OpenedTiles[startTileId] += 4;
+            ClosedTiles[startTileId] -= 3;
+            CallBlocks.Add(new Block(BlockType.QUAD, startTileId, blockSource, 0));
+            WinningTile = -1;
+            Debug.Log("[ApplyDaiminKan]");
+            PrintHand();
+            PrintHandNames();
+            return 0;
+        }
+
+        public int ApplyPon(int sourceTileId, int startTileId, BlockSource blockSource)
+        {
+            if (TilesLeftToDraw != 1 || TileOutOfRange(sourceTileId) || TileOutOfRange(startTileId))
+            {
+                return -1;
+            }
+            OpenedTiles[startTileId] += 3;
+            ClosedTiles[startTileId] -= 2;
+            CallBlocks.Add(new Block(BlockType.TRIPLET, startTileId, blockSource, 0));
+            TilesLeftToDraw -= 1;
+            WinningTile = -1;
+            Debug.Log("[ApplyPon]");
+            PrintHand();
+            PrintHandNames();
+            return 0;
+        }
+
+        public int ApplyChii(int sourceTileId, int startTileId)
+        {
+            if (TilesLeftToDraw != 1 || TileOutOfRange(sourceTileId) || TileOutOfRange(startTileId))
+            {
+                return -1;
+            }
+            int sourceTileIndex = 0;
+            for (int i = 0; i < 3; ++i)
+            {
+                int targetTileId = startTileId + i;
+                OpenedTiles[targetTileId] += 1;
+                if (targetTileId == sourceTileId)
+                {
+                    sourceTileIndex = i;
+                    continue;
+                }
+                ClosedTiles[targetTileId] -= 1;
+            }
+            CallBlocks.Add(new Block(BlockType.SEQUENCE, startTileId, BlockSource.KAMICHA, sourceTileIndex));
+            TilesLeftToDraw -= 1;
+            WinningTile = -1;
+            Debug.Log("[ApplyChii]");
+            PrintHand();
+            PrintHandNames();
+            return 0;
+        }
         public int DrawFirstHand(List<int> hand)
         {
             Debug.Log($"[DrawFirstHand] Attempting to draw hand: {string.Join(", ", hand.Select(t => TileDictionary.NumToString[t]))}");
@@ -380,6 +534,7 @@ namespace Game.Shared
             if (TilesLeftToDraw != 1 || TileOutOfRange(tile))
             {
                 PrintHandNames();
+                Debug.LogError($"[TsumoOneTile] Tile Left to Draw: {TilesLeftToDraw}");
                 Debug.LogError("[TsumoOneTile] Invalid tsumo operation.");
                 return -1;
             }
@@ -393,14 +548,15 @@ namespace Game.Shared
             return 0;
         }
 
-        private void PrintHand()
+        public void PrintHand()
         {
             var closedTilesOutput = string.Join(" ", ClosedTiles.Select((value, index) => index % 9 == 0 && index != 0 ? $"\n{value}" : value.ToString()));
             var openedTilesOutput = string.Join(" ", OpenedTiles.Select((value, index) => index % 9 == 0 && index != 0 ? $"\n{value}" : value.ToString()));
             Debug.Log($"[PrintHand] Closed Tiles:\n{closedTilesOutput}\n[PrintHand] Opened Tiles:\n{openedTilesOutput}\nFlower Points: {FlowerPoint}");
+            PrintCallBlocks();
         }
 
-        private void PrintHandNames()
+        public void PrintHandNames()
         {
             var closedTilesNames = string.Join(" ", ClosedTiles.SelectMany((value, index) => Enumerable.Repeat(TileDictionary.NumToString[index], value)));
             var openedTilesNames = string.Join(" ", OpenedTiles.SelectMany((value, index) => Enumerable.Repeat(TileDictionary.NumToString[index], value)));
@@ -408,7 +564,84 @@ namespace Game.Shared
 
             Debug.Log($"[PrintHandNames] Closed Tiles: {closedTilesNames}\n[PrintHandNames] Opened Tiles: {openedTilesNames}\nFlower Points: {FlowerPoint}\nWinning Tile: {winningTileName}");
             Debug.Log($"Tiles Left to Draw: {TilesLeftToDraw}");
+            PrintCallBlocks();
         }
 
+        // CallBlocks 출력 메서드
+        public void PrintCallBlocks()
+        {
+            if (CallBlocks == null || CallBlocks.Count == 0)
+            {
+                Debug.Log("CallBlocks가 비어있습니다.");
+                return;
+            }
+
+            Debug.Log("CallBlocks 출력:");
+            foreach (var block in CallBlocks)
+            {
+                Debug.Log(GetBlockString(block));
+            }
+        }
+
+        // Block 정보를 문자열로 변환하는 헬퍼 함수
+        private string GetBlockString(Block block)
+        {
+            string result = "";
+
+            if (block.Source != BlockSource.SELF)
+                result += "[";
+            else if (block.Type == BlockType.QUAD)
+                result += "{";
+
+            switch (block.Type)
+            {
+                case BlockType.PAIR:
+                    result += $"{TileDictionary.NumToString[block.Tile]}{TileDictionary.NumToString[block.Tile]}";
+                    break;
+
+                case BlockType.SEQUENCE:
+                    for (int i = 0; i < 3; i++)
+                    {
+                        result += TileDictionary.NumToString[block.Tile + i];
+                    }
+                    break;
+
+                case BlockType.TRIPLET:
+                    for (int i = 0; i < 3; i++)
+                    {
+                        result += TileDictionary.NumToString[block.Tile];
+                    }
+                    break;
+
+                case BlockType.QUAD:
+                    for (int i = 0; i < 4; i++)
+                    {
+                        result += TileDictionary.NumToString[block.Tile];
+                    }
+                    break;
+
+                case BlockType.SINGLETILE:
+                    result += TileDictionary.NumToString[block.Tile];
+                    break;
+
+                case BlockType.KNITTED:
+                    for (int i = 0; i < 3; i++)
+                    {
+                        result += TileDictionary.NumToString[block.Tile + i * 3];
+                    }
+                    break;
+
+                default:
+                    result += $"{block.Type} {TileDictionary.NumToString[block.Tile]} {block.Source}";
+                    break;
+            }
+
+            if (block.Source != BlockSource.SELF)
+                result += "]";
+            else if (block.Type == BlockType.QUAD)
+                result += "}";
+
+            return result;
+        }
     }
 }

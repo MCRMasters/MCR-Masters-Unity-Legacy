@@ -307,7 +307,7 @@ public class TileGrid : MonoBehaviour
     private IEnumerator ShowTedashiCoroutine()
     {
         // 1. Remove null values from indexToChild and update the list
-        indexToChild = indexToChild.Where(obj => obj != null).ToList();
+        indexToChild = indexToChild.Where(obj => obj != null && obj.activeSelf == true).ToList();
 
         if (indexToChild.Count == 0)
         {
@@ -388,6 +388,60 @@ public class TileGrid : MonoBehaviour
     }
 
 
+    public void DiscardTsumoTile()
+    {
+        DiscardSelectedTile(LastTsumoTileObject);
+    }
+
+    public void DiscardTileByTileId(int tileId)
+    {
+        if (tileId < 0 || tileId >= 35)
+        {
+            return;
+        }
+        if (LastTsumoTileObject != null && LastTsumoTileObject.name.Substring(0, 2) == TileDictionary.NumToString[tileId])
+        {
+            DiscardSelectedTile(LastTsumoTileObject);
+            return;
+        }
+        for (int i=indexToChild.Count-1; i >= 0; i--)
+        {
+            if (indexToChild[i] != null)
+            {
+                if (indexToChild[i].name.Substring(0, 2) == TileDictionary.NumToString[tileId])
+                {
+                    DiscardSelectedTile(indexToChild[i]);
+                    return;
+                }
+            }
+        }
+    }
+
+    public void DestoryLastTile()
+    {
+
+        if (LastTsumoTileObject != null)
+        {
+            Destroy(LastTsumoTileObject);
+            LastTsumoTileObject = null;
+        }
+        else
+        {
+            for (int i = indexToChild.Count - 1; i >= 0; --i)
+            {
+                if (indexToChild[i] != null)
+                {
+                    Destroy(indexToChild[i]);
+                    indexToChild[i] = null;
+                    break;
+                }
+            }
+        }
+
+        Debug.Log("[DestoryLastTile] Calling ArrangeChildrenByIndexAndName.");
+        ArrangeChildrenByIndexAndName();
+        Debug.Log("[DestoryLastTile] Completed.");
+    }
     public void DiscardSelectedTile(GameObject tile)
     {
         if (tile == null)
@@ -436,6 +490,7 @@ public class TileGrid : MonoBehaviour
         Debug.Log($"playerManager GameObject name: {playerManager.name}");
         Debug.Log($"playerManager components: {string.Join(", ", playerManager.GetComponents<Component>().Select(c => c.GetType().Name))}");
         pm.CmdDiscardTile(tileName, isTsumoTile);
+        pm.setRemainingTimeZero();
         pm.DeleteButtons();
 
         Debug.Log($"The selected tile {tileName} has been discarded and the grid rearranged.");

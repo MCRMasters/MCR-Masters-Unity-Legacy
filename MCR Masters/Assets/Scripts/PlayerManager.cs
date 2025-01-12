@@ -17,6 +17,9 @@ using System.Xml;
 using Mirror.BouncyCastle.Security.Certificates;
 using UnityEngine.Tilemaps;
 using System.Runtime.InteropServices;
+using UnityEngine.WSA;
+using UnityEditor.Experimental.GraphView;
+using TreeEditor;
 
 public class PlayerManager : NetworkBehaviour
 {
@@ -30,6 +33,7 @@ public class PlayerManager : NetworkBehaviour
     public PlayerStatus playerStatus;
 
     private float remainingTime;
+    private float remainingTimeActionId;
 
     private List<int> PlayerHandTiles = new();
     private List<Block> PlayerCallBlocksList = new();
@@ -57,6 +61,11 @@ public class PlayerManager : NetworkBehaviour
     public GameObject EnemyKawaKami;
     public GameObject EnemyKawaShimo;
     public GameObject[] EnemyKawaList;
+
+    public GameObject EnemyFuroFieldShimo;
+    public GameObject EnemyFuroFieldToi;
+    public GameObject EnemyFuroFieldKami;
+    public GameObject PlayerFuroField;
 
     public GameObject PlayerFlowerField;
     public GameObject EnemyFlowerFieldShimo;
@@ -88,8 +97,32 @@ public class PlayerManager : NetworkBehaviour
     private GameObject chiiButton;
     private GameObject ponButton;
     private GameObject kanButton;
-    private List<GameObject> allButtons;
 
+
+    private void DestoryAllChildrenOfFuroFields()
+    {
+        DestroyAllChildren(PlayerFuroField);
+        DestroyAllChildren(EnemyFuroFieldShimo);
+        DestroyAllChildren(EnemyFuroFieldToi);
+        DestroyAllChildren(EnemyFuroFieldKami);
+    }
+
+    public static void DestroyAllChildren(GameObject parent)
+    {
+        if (parent == null)
+        {
+            Debug.LogError("부모 GameObject가 null입니다.");
+            return;
+        }
+
+        // 부모 오브젝트의 Transform을 기준으로 모든 자식 오브젝트 순회
+        foreach (Transform child in parent.transform)
+        {
+            UnityEngine.Object.Destroy(child.gameObject);
+        }
+
+        Debug.Log($"{parent.name}의 모든 자식 오브젝트가 삭제되었습니다.");
+    }
 
     private PlayerManager GetOwnedPlayerManager()
     {
@@ -106,7 +139,7 @@ public class PlayerManager : NetworkBehaviour
         {
             if (playerManager.isOwned)
             {
-                return playerManager; ;
+                return playerManager;
             }
         }
         return null;
@@ -124,75 +157,892 @@ public class PlayerManager : NetworkBehaviour
         DestroyAdditionalChoices();
     }
 
-    [TargetRpc]
-    public void TargetClearButtonsAndDoCallAction(NetworkConnection conn, ActionPriorityInfo action, int sourceTileId, int playerIndex)
+    public void ClearButtonsAndDoCallAction(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, KanType kanType)
     {
-        PlayerManager playerManager = GetOwnedPlayerManager();
-        if (playerManager == null)
-        {
-            return;
-        }
-        if (playerManager.PlayerIndex != playerIndex)
+        if (PlayerIndex != playerIndex)
         {
             DeleteButtons();
             DestroyAdditionalChoices();
+
+            // 완료 응답 보내기
+            CmdNotifyActionCompleted();
             return;
         }
-        ExecuteAction(action, sourceTileId, playerIndex);
+
+        // 액션 실행
+        ExecuteAction(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, kanType);
+
+        // 액션 실행 완료 후 서버에 응답
+        CmdNotifyActionCompleted();
     }
 
-    // TODO: need to be added
-    private void PerformKan(ActionPriorityInfo action, int sourceTileId, int playerIndex)
+
+    [TargetRpc]
+    public void TargetClearButtonsAndDoCallAction(NetworkConnection conn, ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, KanType kanType)
     {
+        PlayerManager playerManager = GetOwnedPlayerManager();
 
+        if(playerManager != null)
+        {
+            playerManager.ClearButtonsAndDoCallAction(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, kanType);
+        }
     }
 
-    private void PerformPon(ActionPriorityInfo action, int sourceTileId, int playerIndex)
+    [Command]
+   public void CmdNotifyActionCompleted()
     {
-
+        serverManager.NotifyActionCompleted();
     }
 
-    private void PerformChii(ActionPriorityInfo action, int sourceTileId, int playerIndex)
+    [Command]
+    public void CmdPerformKan(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, KanType kanType)
     {
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
 
+        if (allPlayerManagers.Length == 0)
+        {
+            Debug.LogWarning("[CmdPerformKan] No PlayerManager instances found in the scene.");
+            return;
+        }
+        foreach (var pm in allPlayerManagers)
+        {
+            if (kanType == KanType.ANKAN && pm.PlayerIndex != playerIndex)
+            {
+                ActionPriorityInfo hideTileIdAction = new ActionPriorityInfo(action.Type, action.Priority, -1);
+                TargetPerformKan(pm.connectionToClient, hideTileIdAction, -1, playerIndex, sourcePlayerIndex, isDiscarded, kanType);
+            }
+            else
+            {
+                TargetPerformKan(pm.connectionToClient, action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, kanType);
+            }
+        }
+        
+    }
+
+    [TargetRpc]
+    public void TargetPerformKan(NetworkConnection conn, ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, KanType kanType)
+    {
+        // 현재 씬에서 모든 PlayerManager 객체를 찾음
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
+        {
+            Debug.LogWarning("No PlayerManager instances found in the scene.");
+            return;
+        }
+
+        Debug.Log($"[RpcPerformKan] Found {allPlayerManagers.Length} PlayerManager instances:");
+        foreach (var playerManager in allPlayerManagers)
+        {
+            if (playerManager == null)
+                continue;
+            if (playerManager.isOwned)
+            {
+                playerManager.PerformKan(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, kanType);
+                return;
+            }
+        }
+    }
+
+    public void PerformKan(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, KanType kanType)
+    {
+        if (playerIndex == PlayerIndex)
+        {
+            if (kanType == KanType.DAIMINKAN)
+            {
+                PerformDaiminKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, PlayerFuroField, PlayerHaipai, GetKawaByIndex(sourcePlayerIndex));
+            }
+            else if (kanType == KanType.ANKAN)
+            {
+                PerformAnKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, PlayerFuroField, PlayerHaipai);
+            }
+        }
+        else
+        {
+            int relativeIndex = GetRelativeIndex(playerIndex);
+            if (relativeIndex == 0)
+            {
+                if (kanType == KanType.DAIMINKAN)
+                {
+                    PerformDaiminKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldShimo, EnemyHaipaiShimo, GetKawaByIndex(sourcePlayerIndex));
+                }
+                else if (kanType == KanType.ANKAN)
+                {
+                    PerformAnKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldShimo, EnemyHaipaiShimo);
+                }
+            }
+            else if (relativeIndex == 1)
+            {
+                if (kanType == KanType.DAIMINKAN)
+                {
+                    PerformDaiminKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldToi, EnemyHaipaiToi, GetKawaByIndex(sourcePlayerIndex));
+                }
+                else if (kanType == KanType.ANKAN)
+                {
+                    PerformAnKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldToi, EnemyHaipaiToi);
+                }
+            }
+            else if (relativeIndex == 2)
+            {
+                if (kanType == KanType.DAIMINKAN)
+                {
+                    PerformDaiminKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldKami, EnemyHaipaiKami, GetKawaByIndex(sourcePlayerIndex));
+                }
+                else if (kanType == KanType.ANKAN)
+                {
+                    PerformAnKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldKami, EnemyHaipaiKami);
+                }
+            }
+        }
+    }
+
+    private void PerformAnKanSub(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, GameObject FuroField, GameObject HaiPaiField)
+    {
+        // 기본 타일 크기 및 간격 설정
+        float tileWidth = 50;
+        float tileHeight = 75;
+        float spacing = 0f; // 타일 간격 추가
+
+        float groupSpacing = 10f;
+
+        //GameObject FuroField = PlayerFuroField;
+
+        // FuroField 확인
+        if (FuroField == null)
+        {
+            Debug.LogError("FuroField not found in the scene.");
+            return;
+        }
+
+        // 그룹 생성 및 부모 설정
+        GameObject tileGroup = new GameObject("TileGroup", typeof(RectTransform));
+        tileGroup.transform.SetParent(FuroField.transform, false);
+        RectTransform tileGroupRect = tileGroup.GetComponent<RectTransform>();
+
+        // 타일 묶음 크기 설정
+        tileGroupRect.sizeDelta = new Vector2(tileWidth * 4 + spacing * 3, tileHeight);
+        tileGroupRect.anchorMin = new Vector2(0, 0.5f);  // 왼쪽 정렬
+        tileGroupRect.anchorMax = new Vector2(0, 0.5f);
+        tileGroupRect.pivot = new Vector2(0, 0.5f);
+
+        // 기존 자식 오브젝트 개수 확인
+        int childCount = FuroField.transform.childCount;
+
+        DebugFuroFieldChildren(FuroField.transform);
+
+
+        // 마지막 자식의 위치를 기반으로 위치 조정
+        if (childCount > 1)
+        {
+            Transform lastChild = FuroField.transform.GetChild(childCount - 2);
+            RectTransform lastChildRect = lastChild.GetComponent<RectTransform>();
+
+            // 디버깅: 마지막 자식의 위치와 크기 출력
+            Debug.Log($"[PerformPonSub] Last Child Position: {lastChildRect.anchoredPosition.x}, Size: {lastChildRect.sizeDelta.x}");
+
+            // 새 그룹을 마지막 그룹의 왼쪽으로 한 칸 더 떨어져 위치시키기
+            float newX = lastChildRect.anchoredPosition.x - (lastChildRect.sizeDelta.x + groupSpacing + tileWidth + spacing);
+
+            tileGroupRect.anchoredPosition = new Vector2(newX, 0);
+
+            // 디버깅: 새 그룹 위치 출력
+            Debug.Log($"[PerformPonSub] New TileGroup Position: {tileGroupRect.anchoredPosition.x}");
+        }
+        else
+        {
+            // 첫 번째 그룹일 경우, FuroField의 왼쪽 끝에 배치
+            tileGroupRect.anchoredPosition = new Vector2(-tileGroupRect.sizeDelta.x, 0);
+            Debug.Log("[PerformPonSub] First TileGroup positioned at (0,0)");
+        }
+
+
+        Debug.Log($"[PerformPonSub] PlayerIndex: {PlayerIndex}, playerIndex: {playerIndex}, sourcePlayerIndex: {sourcePlayerIndex}, source tile: {sourceTileId}");
+
+        float tile_space = 0;
+        TileGrid haipaiTileGrid = HaiPaiField.GetComponent<TileGrid>();
+
+
+
+        //int relativeIndexOfSource = GetRelativeIndex(sourcePlayerIndex);
+
+        bool DidTsumoGiriFlag = false;
+        // 나머지 타일 추가
+        for (int i = 0; i < 4; i++)
+        {
+            GameObject tile;
+            if (action.TileId < 0)
+            {
+                tile = Instantiate(TileBackPrefab, tileGroup.transform);
+                tile.name = "TileBack";
+            }
+            else
+            {
+                tile = Instantiate(TilePrefabArray[action.TileId], tileGroup.transform);
+                tile.name = TileDictionary.NumToString[action.TileId];
+            }
+            if (haipaiTileGrid != null)
+            {
+                if (HaiPaiField == PlayerHaipai)
+                {
+                    haipaiTileGrid.DestoryByTileId(action.TileId);
+                }
+                else
+                {
+                    if (sourceTileId == -1)
+                    {
+                        if (!DidTsumoGiriFlag)
+                        {
+                            DidTsumoGiriFlag = true;
+                            haipaiTileGrid.ShowTedashi(false);
+                        }
+                        else
+                        {
+                            haipaiTileGrid.ShowTedashi(true);
+                        }
+                    }
+                    else
+                    {
+                        haipaiTileGrid.ShowTedashi(true);
+                    }
+                }
+            }
+            RectTransform tileRect = tile.GetComponent<RectTransform>();
+            tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+            tileRect.anchoredPosition = new Vector2(tile_space, 0);
+            tile_space += tileWidth + spacing;
+
+            
+
+            TileEvent tileEvent = tile.GetComponent<TileEvent>();
+            if (tileEvent != null)
+            {
+                tileEvent.SetUndraggable();
+            }
+        }
+    }
+    private void PerformDaiminKanSub(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, GameObject FuroField, GameObject HaiPaiField, GameObject KawaField)
+    {
+        // 기본 타일 크기 및 간격 설정
+        float tileWidth = 50;
+        float tileHeight = 75;
+        float spacing = 0f; // 타일 간격 추가
+
+        float groupSpacing = 10f;
+
+        //GameObject FuroField = PlayerFuroField;
+
+        // FuroField 확인
+        if (FuroField == null)
+        {
+            Debug.LogError("FuroField not found in the scene.");
+            return;
+        }
+
+        if (KawaField == null)
+        {
+            Debug.LogError("KawaField not found in the scene.");
+            return;
+        }
+
+        TileGrid tileGridKawa = KawaField.GetComponent<TileGrid>();
+        if (tileGridKawa == null)
+        {
+            Debug.LogError("TileGrid is not in KawaField.");
+            return;
+        }
+
+        tileGridKawa.DestoryLastTile();
+
+        // 그룹 생성 및 부모 설정
+        GameObject tileGroup = new GameObject("TileGroup", typeof(RectTransform));
+        tileGroup.transform.SetParent(FuroField.transform, false);
+        RectTransform tileGroupRect = tileGroup.GetComponent<RectTransform>();
+
+        // 타일 묶음 크기 설정
+        tileGroupRect.sizeDelta = new Vector2(tileWidth * 3 + tileHeight + spacing * 2, tileHeight);
+        tileGroupRect.anchorMin = new Vector2(0, 0.5f);  // 왼쪽 정렬
+        tileGroupRect.anchorMax = new Vector2(0, 0.5f);
+        tileGroupRect.pivot = new Vector2(0, 0.5f);
+
+        // 기존 자식 오브젝트 개수 확인
+        int childCount = FuroField.transform.childCount;
+
+        DebugFuroFieldChildren(FuroField.transform);
+
+
+        // 마지막 자식의 위치를 기반으로 위치 조정
+        if (childCount > 1)
+        {
+            Transform lastChild = FuroField.transform.GetChild(childCount - 2);
+            RectTransform lastChildRect = lastChild.GetComponent<RectTransform>();
+
+            // 디버깅: 마지막 자식의 위치와 크기 출력
+            Debug.Log($"[PerformDaiminKanSub] Last Child Position: {lastChildRect.anchoredPosition.x}, Size: {lastChildRect.sizeDelta.x}");
+
+            // 새 그룹을 마지막 그룹의 왼쪽으로 한 칸 더 떨어져 위치시키기
+            float newX = lastChildRect.anchoredPosition.x - (lastChildRect.sizeDelta.x + groupSpacing + tileWidth + spacing);
+
+            tileGroupRect.anchoredPosition = new Vector2(newX, 0);
+
+            // 디버깅: 새 그룹 위치 출력
+            Debug.Log($"[PerformDaiminKanSub] New TileGroup Position: {tileGroupRect.anchoredPosition.x}");
+        }
+        else
+        {
+            // 첫 번째 그룹일 경우, FuroField의 왼쪽 끝에 배치
+            tileGroupRect.anchoredPosition = new Vector2(-tileGroupRect.sizeDelta.x, 0);
+            Debug.Log("[PerformDaiminKanSub] First TileGroup positioned at (0,0)");
+        }
+
+
+        Debug.Log($"[PerformDaiminKanSub] PlayerIndex: {PlayerIndex}, playerIndex: {playerIndex}, sourcePlayerIndex: {sourcePlayerIndex}, source tile: {TileDictionary.NumToString[sourceTileId]}");
+
+        float tile_space = 0;
+        TileGrid haipaiTileGrid = HaiPaiField.GetComponent<TileGrid>();
+
+        //int relativeIndexOfSource = GetRelativeIndex(sourcePlayerIndex);
+
+        // 나머지 타일 추가
+        for (int i = 0; i < 4; i++)
+        {
+            if (((int)action.Priority == 3 && i == 3) || ((int)action.Priority != 3 && i == (int)action.Priority - 1))
+            {
+                GameObject tile = Instantiate(TilePrefabArray[action.TileId], tileGroup.transform);
+                tile.name = TileDictionary.NumToString[action.TileId];
+                RectTransform tileRect = tile.GetComponent<RectTransform>();
+                tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+                tileRect.anchoredPosition = new Vector2(tile_space, -tileHeight); // 아래로 배치
+                tile_space += tileHeight + spacing;
+                tileRect.localRotation = Quaternion.Euler(0, 0, 90); // 눕히기
+
+                TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                if (tileEvent != null)
+                {
+                    tileEvent.SetUndraggable();
+                }
+            }
+            else
+            {
+                GameObject tile = Instantiate(TilePrefabArray[action.TileId], tileGroup.transform);
+                tile.name = TileDictionary.NumToString[action.TileId];
+                RectTransform tileRect = tile.GetComponent<RectTransform>();
+                tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+                tileRect.anchoredPosition = new Vector2(tile_space, 0);
+                tile_space += tileWidth + spacing;
+
+                if (haipaiTileGrid != null)
+                {
+                    if (HaiPaiField == PlayerHaipai)
+                    {
+                        haipaiTileGrid.DestoryByTileId(action.TileId);
+                    }
+                    else
+                    {
+                        haipaiTileGrid.DestoryLastTile();
+                    }
+                }
+
+                TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                if (tileEvent != null)
+                {
+                    tileEvent.SetUndraggable();
+                }
+            }
+        }
     }
 
 
-    private void ExecuteAction(ActionPriorityInfo action, int sourceTileId, int playerIndex)
+
+
+    [Command]
+    public void CmdPerformPon(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded)
+    {
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
+        {
+            Debug.LogWarning("[CmdPerformPon] No PlayerManager instances found in the scene.");
+            return;
+        }
+        RpcPerformPon(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded);
+    }
+
+    [ClientRpc]
+    public void RpcPerformPon(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded)
+    {
+        // 현재 씬에서 모든 PlayerManager 객체를 찾음
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
+        {
+            Debug.LogWarning("No PlayerManager instances found in the scene.");
+            return;
+        }
+
+        Debug.Log($"[RpcPerformPon] Found {allPlayerManagers.Length} PlayerManager instances:");
+        foreach (var playerManager in allPlayerManagers)
+        {
+            if (playerManager == null)
+                continue;
+            if (playerManager.isOwned)
+            {
+                playerManager.PerformPon(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded);
+                return;
+            }
+        }
+    }
+
+    private GameObject GetKawaByIndex(int sourcePlayerIndex)
+    {
+        if (PlayerIndex == sourcePlayerIndex)
+        {
+            return PlayerKawa;
+        }
+        else
+        {
+            int relativeIndex = GetRelativeIndex(sourcePlayerIndex);
+            if (relativeIndex == 0)
+            {
+                return EnemyKawaShimo;
+            }
+            else if(relativeIndex == 1)
+            {
+                return EnemyKawaToi;
+            }
+            else if (relativeIndex == 2)
+            {
+                return EnemyKawaKami;
+            }
+            else
+            {
+                return null;
+            }
+        }
+    }
+
+    public void PerformPon(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded)
+    {
+        if (playerIndex == PlayerIndex)
+        {
+            PerformPonSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, PlayerFuroField, PlayerHaipai, GetKawaByIndex(sourcePlayerIndex));
+        }
+        else
+        {
+            int relativeIndex = GetRelativeIndex(playerIndex);
+            if (relativeIndex == 0)
+            {
+                PerformPonSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldShimo, EnemyHaipaiShimo, GetKawaByIndex(sourcePlayerIndex));
+            }
+            else if (relativeIndex == 1)
+            {
+                PerformPonSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldToi, EnemyHaipaiToi, GetKawaByIndex(sourcePlayerIndex));
+            }
+            else if (relativeIndex == 2)
+            {
+                PerformPonSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldKami, EnemyHaipaiKami, GetKawaByIndex(sourcePlayerIndex));
+            }
+        }
+    }
+
+    private void PerformPonSub(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, GameObject FuroField, GameObject HaiPaiField, GameObject KawaField)
+    {
+        // 기본 타일 크기 및 간격 설정
+        float tileWidth = 50;
+        float tileHeight = 75;
+        float spacing = 0f; // 타일 간격 추가
+
+        float groupSpacing = 10f;
+
+        //GameObject FuroField = PlayerFuroField;
+
+        // FuroField 확인
+        if (FuroField == null)
+        {
+            Debug.LogError("FuroField not found in the scene.");
+            return;
+        }
+
+        if (KawaField == null)
+        {
+            Debug.LogError("KawaField not found in the scene.");
+            return;
+        }
+
+        TileGrid tileGridKawa = KawaField.GetComponent<TileGrid>();
+        if (tileGridKawa == null)
+        {
+            Debug.LogError("TileGrid is not in KawaField.");
+            return;
+        }
+
+        tileGridKawa.DestoryLastTile();
+
+        // 그룹 생성 및 부모 설정
+        GameObject tileGroup = new GameObject("TileGroup", typeof(RectTransform));
+        tileGroup.transform.SetParent(FuroField.transform, false);
+        RectTransform tileGroupRect = tileGroup.GetComponent<RectTransform>();
+
+        // 타일 묶음 크기 설정
+        tileGroupRect.sizeDelta = new Vector2(tileWidth * 2 + tileHeight + spacing * 2, tileHeight);
+        tileGroupRect.anchorMin = new Vector2(0, 0.5f);  // 왼쪽 정렬
+        tileGroupRect.anchorMax = new Vector2(0, 0.5f);
+        tileGroupRect.pivot = new Vector2(0, 0.5f);
+
+        // 기존 자식 오브젝트 개수 확인
+        int childCount = FuroField.transform.childCount;
+
+        DebugFuroFieldChildren(FuroField.transform);
+
+
+        // 마지막 자식의 위치를 기반으로 위치 조정
+        if (childCount > 1)
+        {
+            Transform lastChild = FuroField.transform.GetChild(childCount - 2);
+            RectTransform lastChildRect = lastChild.GetComponent<RectTransform>();
+
+            // 디버깅: 마지막 자식의 위치와 크기 출력
+            Debug.Log($"[PerformPonSub] Last Child Position: {lastChildRect.anchoredPosition.x}, Size: {lastChildRect.sizeDelta.x}");
+
+            // 새 그룹을 마지막 그룹의 왼쪽으로 한 칸 더 떨어져 위치시키기
+            float newX = lastChildRect.anchoredPosition.x - (lastChildRect.sizeDelta.x + groupSpacing + tileWidth + spacing);
+
+            tileGroupRect.anchoredPosition = new Vector2(newX, 0);
+
+            // 디버깅: 새 그룹 위치 출력
+            Debug.Log($"[PerformPonSub] New TileGroup Position: {tileGroupRect.anchoredPosition.x}");
+        }
+        else
+        {
+            // 첫 번째 그룹일 경우, FuroField의 왼쪽 끝에 배치
+            tileGroupRect.anchoredPosition = new Vector2(-tileGroupRect.sizeDelta.x, 0);
+            Debug.Log("[PerformPonSub] First TileGroup positioned at (0,0)");
+        }
+
+
+        Debug.Log($"[PerformPonSub] PlayerIndex: {PlayerIndex}, playerIndex: {playerIndex}, sourcePlayerIndex: {sourcePlayerIndex}, source tile: {TileDictionary.NumToString[sourceTileId]}");
+
+        float tile_space = 0;
+        TileGrid haipaiTileGrid = HaiPaiField.GetComponent<TileGrid>();
+
+        //int relativeIndexOfSource = GetRelativeIndex(sourcePlayerIndex);
+
+        // 나머지 타일 추가
+        for (int i = 0; i < 3; i++)
+        {
+            if (i == (int)action.Priority - 1)
+            {
+                GameObject tile = Instantiate(TilePrefabArray[action.TileId], tileGroup.transform);
+                tile.name = TileDictionary.NumToString[action.TileId];
+                RectTransform tileRect = tile.GetComponent<RectTransform>();
+                tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+                tileRect.anchoredPosition = new Vector2(tile_space, -tileHeight); // 아래로 배치
+                tile_space += tileHeight + spacing;
+                tileRect.localRotation = Quaternion.Euler(0, 0, 90); // 눕히기
+
+                TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                if (tileEvent != null)
+                {
+                    tileEvent.SetUndraggable();
+                }
+            }
+            else
+            {
+                GameObject tile = Instantiate(TilePrefabArray[action.TileId], tileGroup.transform);
+                tile.name = TileDictionary.NumToString[action.TileId];
+                RectTransform tileRect = tile.GetComponent<RectTransform>();
+                tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+                tileRect.anchoredPosition = new Vector2(tile_space, 0);
+                tile_space += tileWidth + spacing;
+
+                if (haipaiTileGrid != null)
+                {
+                    if (HaiPaiField == PlayerHaipai)
+                    {
+                        haipaiTileGrid.DestoryByTileId(action.TileId);
+                    }
+                    else
+                    {
+                        haipaiTileGrid.DestoryLastTile();
+                    }
+                }
+
+                TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                if (tileEvent != null)
+                {
+                    tileEvent.SetUndraggable();
+                }
+            }
+        }
+    }
+
+
+
+    [Command]
+    public void CmdPerformChii(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded)
+    {
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
+        {
+            Debug.LogWarning("[CmdPerformChii] No PlayerManager instances found in the scene.");
+            return;
+        }
+        RpcPerformChii(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded);
+    }
+
+    [ClientRpc]
+    public void RpcPerformChii(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded)
+    {
+        // 현재 씬에서 모든 PlayerManager 객체를 찾음
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
+        {
+            Debug.LogWarning("No PlayerManager instances found in the scene.");
+            return;
+        }
+
+        Debug.Log($"[RpcPerformChii] Found {allPlayerManagers.Length} PlayerManager instances:");
+        foreach (var playerManager in allPlayerManagers)
+        {
+            if (playerManager == null)
+                continue;
+            if (playerManager.isOwned)
+            {
+                playerManager.PerformChii(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded);
+                return;
+            }
+        }
+
+    }
+    
+    public void PerformChii(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded)
+    {
+        if (playerIndex == PlayerIndex)
+        {
+            PerformChiiSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, PlayerFuroField, PlayerHaipai, GetKawaByIndex(sourcePlayerIndex));
+        }
+        else
+        {
+            int relativeIndex = GetRelativeIndex(playerIndex);
+            if (relativeIndex == 0)
+            {
+                PerformChiiSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldShimo, EnemyHaipaiShimo, GetKawaByIndex(sourcePlayerIndex));
+            }
+            else if (relativeIndex == 1)
+            {
+                PerformChiiSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldToi, EnemyHaipaiToi, GetKawaByIndex(sourcePlayerIndex));
+            }
+            else if (relativeIndex == 2)
+            {
+                PerformChiiSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldKami, EnemyHaipaiKami, GetKawaByIndex(sourcePlayerIndex));
+            }
+        }
+    }
+
+    private void PerformChiiSub(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, GameObject FuroField, GameObject HaiPaiField, GameObject KawaField)
+    {
+        int relativeIndexOfSource = sourceTileId - action.TileId;
+
+        // 기본 타일 크기 및 간격 설정
+        float tileWidth = 50;
+        float tileHeight = 75;
+        float spacing = 0f; // 타일 간격 추가
+
+        float groupSpacing = 10f;
+
+        //GameObject FuroField = PlayerFuroField;
+
+        // FuroField 확인
+        if (FuroField == null)
+        {
+            Debug.LogError("FuroField not found in the scene.");
+            return;
+        }
+
+        if (KawaField == null)
+        {
+            Debug.LogError("KawaField not found in the scene.");
+            return;
+        }
+
+        TileGrid tileGridKawa = KawaField.GetComponent<TileGrid>();
+        if (tileGridKawa == null)
+        {
+            Debug.LogError("TileGrid is not in KawaField.");
+            return;
+        }
+        tileGridKawa.DestoryLastTile();
+
+        // 그룹 생성 및 부모 설정
+        GameObject tileGroup = new GameObject("TileGroup", typeof(RectTransform));
+        tileGroup.transform.SetParent(FuroField.transform, false);
+        RectTransform tileGroupRect = tileGroup.GetComponent<RectTransform>();
+
+        // 타일 묶음 크기 설정
+        tileGroupRect.sizeDelta = new Vector2(tileWidth * 2 + tileHeight + spacing * 2, tileHeight);
+        tileGroupRect.anchorMin = new Vector2(0, 0.5f);  // 왼쪽 정렬
+        tileGroupRect.anchorMax = new Vector2(0, 0.5f);
+        tileGroupRect.pivot = new Vector2(0, 0.5f);
+
+        // 기존 자식 오브젝트 개수 확인
+        int childCount = FuroField.transform.childCount;
+
+        DebugFuroFieldChildren(FuroField.transform);
+
+
+        // 마지막 자식의 위치를 기반으로 위치 조정
+        if (childCount > 1)
+        {
+            Transform lastChild = FuroField.transform.GetChild(childCount - 2);
+            RectTransform lastChildRect = lastChild.GetComponent<RectTransform>();
+
+            // 디버깅: 마지막 자식의 위치와 크기 출력
+            Debug.Log($"[PerformChii] Last Child Position: {lastChildRect.anchoredPosition.x}, Size: {lastChildRect.sizeDelta.x}");
+
+            // 새 그룹을 마지막 그룹의 왼쪽으로 한 칸 더 떨어져 위치시키기
+            float newX = lastChildRect.anchoredPosition.x - (lastChildRect.sizeDelta.x + groupSpacing + tileWidth + spacing);
+
+            tileGroupRect.anchoredPosition = new Vector2(newX, 0);
+
+            // 디버깅: 새 그룹 위치 출력
+            Debug.Log($"[PerformChii] New TileGroup Position: {tileGroupRect.anchoredPosition.x}");
+        }
+        else
+        {
+            // 첫 번째 그룹일 경우, FuroField의 왼쪽 끝에 배치
+            tileGroupRect.anchoredPosition = new Vector2(-tileGroupRect.sizeDelta.x, 0);
+            Debug.Log("[PerformChii] First TileGroup positioned at (0,0)");
+        }
+
+
+        Debug.Log($"[PerformChii] PlayerIndex: {PlayerIndex}, playerIndex: {playerIndex}, sourcePlayerIndex: {sourcePlayerIndex}, relativeindex: {relativeIndexOfSource}, source tile: {TileDictionary.NumToString[sourceTileId]}");
+
+        float tile_space = 0;
+        TileGrid haipaiTileGrid = HaiPaiField.GetComponent<TileGrid>();
+
+        // 눕혀진 타일(가져온 타일) 추가
+        for (int i = 0; i < 3; i++)
+        {
+            if (i == relativeIndexOfSource)
+            {
+                GameObject tile = Instantiate(TilePrefabArray[action.TileId + i], tileGroup.transform);
+                tile.name = TileDictionary.NumToString[action.TileId];
+                RectTransform tileRect = tile.GetComponent<RectTransform>();
+                tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+                tileRect.anchoredPosition = new Vector2(tile_space, -tileHeight); // 아래로 배치
+                tile_space += tileHeight + spacing;
+                tileRect.localRotation = Quaternion.Euler(0, 0, 90); // 눕히기
+
+                TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                if (tileEvent != null)
+                {
+                    tileEvent.SetUndraggable();
+                }
+            }
+        }
+
+        // 나머지 타일 추가
+        for (int i = 0; i < 3; i++)
+        {
+            if (i == relativeIndexOfSource)
+                continue;
+
+            GameObject tile = Instantiate(TilePrefabArray[action.TileId + i], tileGroup.transform);
+            tile.name = TileDictionary.NumToString[action.TileId];
+            RectTransform tileRect = tile.GetComponent<RectTransform>();
+            tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+            tileRect.anchoredPosition = new Vector2(tile_space, 0);
+            tile_space += tileWidth + spacing;
+
+            if (haipaiTileGrid != null)
+            {
+                if (HaiPaiField == PlayerHaipai)
+                {
+                    haipaiTileGrid.DestoryByTileId(action.TileId + i);
+                }
+                else
+                {
+                    haipaiTileGrid.DestoryLastTile();
+                }
+            }
+
+            TileEvent tileEvent = tile.GetComponent<TileEvent>();
+            if (tileEvent != null)
+            {
+                tileEvent.SetUndraggable();
+            }
+        }
+    }
+
+    // FuroField의 자식 오브젝트 목록 출력
+    void DebugFuroFieldChildren(Transform furoFieldTransform)
+    {
+        int childCount = furoFieldTransform.childCount;
+
+        if (childCount == 0)
+        {
+            Debug.Log("[DebugFuroFieldChildren] FuroField has no child objects.");
+            return;
+        }
+
+        Debug.Log($"[DebugFuroFieldChildren] FuroField has {childCount} child objects:");
+
+        for (int i = 0; i < childCount; i++)
+        {
+            Transform child = furoFieldTransform.GetChild(i);
+            RectTransform childRect = child.GetComponent<RectTransform>();
+
+            if (childRect != null)
+            {
+                Debug.Log($"[Child {i}] Name: {child.name}, Position: {childRect.anchoredPosition}, Size: {childRect.sizeDelta}");
+            }
+            else
+            {
+                Debug.Log($"[Child {i}] Name: {child.name}, Position: {child.position}, No RectTransform component.");
+            }
+        }
+    }
+
+    private void ExecuteAction(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, KanType kanType)
     {
         switch (action.Type)
         {
             case ActionType.KAN:
-                PerformKan(action, sourceTileId, playerIndex);
+                CmdPerformKan(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, kanType);
                 break;
             case ActionType.PON:
-                PerformPon(action, sourceTileId, playerIndex);
+                CmdPerformPon(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded);
                 break;
             case ActionType.CHII:
-                PerformChii(action, sourceTileId, playerIndex);
+                CmdPerformChii(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded);
                 break;
         }
-    }
 
+    }
 
 
     [TargetRpc]
     public void TargetShowActionButtons(NetworkConnection conn, int playerWindIndex, List<ActionPriorityInfo> actions, int actionTurnId, int tileId)
     {
+        //DeleteButtons();
         StartCoroutine(MakeButtonsAndHandlePlayerDecision(playerWindIndex, actions, actionTurnId, tileId));
 
     }
 
-    private void InitializeButtonList()
-    {
-        allButtons = new List<GameObject> { huButton, skipButton, flowerButton, chiiButton, ponButton, kanButton };
-    }
-
     public void DisableButtons()
     {
+        List<GameObject> allButtons = new List<GameObject> { huButton, skipButton, flowerButton, chiiButton, ponButton, kanButton };
         foreach (var button in allButtons)
         {
-            if (button != null)
+            if (button != null && button.activeSelf)
             {
                 button.SetActive(false);
             }
@@ -203,9 +1053,10 @@ public class PlayerManager : NetworkBehaviour
 
     public void EnableButtons()
     {
+        List<GameObject> allButtons = new List<GameObject> { huButton, skipButton, flowerButton, chiiButton, ponButton, kanButton };
         foreach (var button in allButtons)
         {
-            if (button != null)
+            if (button != null && !button.activeSelf)
             {
                 button.SetActive(true);
             }
@@ -216,13 +1067,14 @@ public class PlayerManager : NetworkBehaviour
 
     public void DeleteButtons()
     {
-        remainingTime = -1;
+        //remainingTime = -1;
         huButton = DeleteButton(huButton);
         skipButton = DeleteButton(skipButton);
         flowerButton = DeleteButton(flowerButton);
         chiiButton = DeleteButton(chiiButton);
         ponButton = DeleteButton(ponButton);
         kanButton = DeleteButton(kanButton);
+        DestroyAdditionalChoices();
     }
 
     private GameObject DeleteButton(GameObject button)
@@ -236,10 +1088,304 @@ public class PlayerManager : NetworkBehaviour
     }
 
 
+    private void ShowHand(GameObject handField, HandData originalHand)
+    {
+        if (handField == null)
+        {
+            Debug.LogError("[ShowHand] HandField not found.");
+            return;
+        }
+        HandData hand = originalHand.DeepCopy();
+        hand.PrintHandNames();
+        //return;
+        // 기본 타일 크기 및 간격 설정
+        float tileWidth = 50f;
+        float tileHeight = 75f;
+        float spacing = 0f;  // 타일 간격
+        float groupSpacing = 20f;  // 블록 간격
+
+        // HandField 초기화 (기존 타일 삭제)
+        foreach (Transform child in handField.transform)
+        {
+            Destroy(child.gameObject);
+        }
+        hand.ClosedTiles[hand.WinningTile] -= 1;
+
+        float currentXPosition = 0f;
+        foreach (BlockData block in hand.CallBlocks)
+        {
+            if (block.Type == (int)BlockType.SINGLETILE)
+            {
+                hand.ClosedTiles[block.Tile] += 1;
+            }
+            else if (block.Type == (int)BlockType.PAIR)
+            {
+                hand.ClosedTiles[block.Tile] += 2;
+            }
+            else if (block.Type == (int)BlockType.KNITTED)
+            {
+                hand.ClosedTiles[block.Tile] += 1;
+                hand.ClosedTiles[block.Tile + 3] += 1;
+                hand.ClosedTiles[block.Tile + 6] += 1;
+            }
+        }
+
+        // 1. ClosedTiles 나열
+        for (int i = 0; i < hand.ClosedTiles.Length; i++)
+        {
+            int count = hand.ClosedTiles[i];
+            for (int j = 0; j < count; j++)
+            {
+                GameObject tilePrefab = TilePrefabArray[i];
+                if (tilePrefab != null)
+                {
+                    GameObject tile = Instantiate(tilePrefab, handField.transform);
+                    tile.name = TileDictionary.NumToString[i];
+
+                    RectTransform tileRect = tile.GetComponent<RectTransform>();
+                    tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+                    tileRect.anchoredPosition = new Vector2(currentXPosition, 0);
+
+                    currentXPosition += tileWidth + spacing;
+
+                    TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                    if (tileEvent != null)
+                    {
+                        tileEvent.SetUndraggable();
+                    }
+                }
+            }
+        }
+        currentXPosition += groupSpacing;
+        // 2. CallBlocks 나열
+        for (int idx = 0; idx < hand.CallBlockCount; idx++) 
+        {
+            BlockData block = hand.CallBlocks[idx];
+            if (block.Type == (int)BlockType.SINGLETILE || block.Type == (int)BlockType.PAIR || block.Type == (int)BlockType.KNITTED)
+            {
+                continue;
+            }
+            // 블록 그룹 생성
+            GameObject blockGroup = new GameObject("BlockGroup", typeof(RectTransform));
+            blockGroup.transform.SetParent(handField.transform, false);
+            RectTransform blockGroupRect = blockGroup.GetComponent<RectTransform>();
+            blockGroupRect.anchorMin = new Vector2(0, 0.5f);  // 왼쪽 정렬
+            blockGroupRect.anchorMax = new Vector2(0, 0.5f);
+            blockGroupRect.pivot = new Vector2(0, 0.5f);
+
+            int blockTileCount = GetBlockTileCount((BlockType)block.Type);
+            blockGroupRect.anchoredPosition = new Vector2(currentXPosition, 0);
+            if (block.Type == (int)BlockType.SEQUENCE)
+            {
+                blockGroupRect.sizeDelta = new Vector2((tileWidth + spacing) * 2 + tileHeight, tileHeight);
+                float offsetx = 0f;
+                for (int i = 0; i < 3; i++)
+                {
+                    if (i == block.SourceTileIndex)
+                    {
+                        GameObject tilePrefab = TilePrefabArray[block.Tile + i];
+                        if (tilePrefab != null)
+                        {
+
+                            GameObject tile = Instantiate(tilePrefab, blockGroup.transform);
+                            tile.name = TileDictionary.NumToString[block.Tile];
+
+                            RectTransform tileRect = tile.GetComponent<RectTransform>();
+                            tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+                            tileRect.anchoredPosition = new Vector2(offsetx, -tileHeight);
+                            offsetx += tileHeight + spacing;
+                            tileRect.localRotation = Quaternion.Euler(0, 0, 90);
+
+                            TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                            if (tileEvent != null)
+                            {
+                                tileEvent.SetUndraggable();
+                            }
+                        }
+                        break;
+                    }
+                }
+                for (int i = 0; i < 3; i++)
+                {
+                    if (i != block.SourceTileIndex)
+                    {
+                        GameObject tilePrefab = TilePrefabArray[block.Tile + i];
+                        if (tilePrefab != null)
+                        {
+
+                            GameObject tile = Instantiate(tilePrefab, blockGroup.transform);
+                            tile.name = TileDictionary.NumToString[block.Tile];
+
+                            RectTransform tileRect = tile.GetComponent<RectTransform>();
+                            tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+                            tileRect.anchoredPosition = new Vector2(offsetx, 0);
+                            offsetx += tileWidth + spacing;
+
+
+                            TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                            if (tileEvent != null)
+                            {
+                                tileEvent.SetUndraggable();
+                            }
+                        }
+                    }
+                }
+            }
+            else if (block.Type == (int)BlockType.TRIPLET)
+            {
+                blockGroupRect.sizeDelta = new Vector2((tileWidth + spacing) * 2 + tileHeight, tileHeight);
+                float tile_space = 0;
+                // 나머지 타일 추가
+                for (int i = 0; i < 3; i++)
+                {
+                    GameObject tilePrefab = TilePrefabArray[block.Tile];
+                    if (i == 3 - (int)block.Source)
+                    {
+                        GameObject tile = Instantiate(tilePrefab, blockGroup.transform);
+                        tile.name = TileDictionary.NumToString[block.Tile];
+                        RectTransform tileRect = tile.GetComponent<RectTransform>();
+                        tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+                        tileRect.anchoredPosition = new Vector2(tile_space, -tileHeight); // 아래로 배치
+                        tile_space += tileHeight + spacing;
+                        tileRect.localRotation = Quaternion.Euler(0, 0, 90); // 눕히기
+
+                        TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                        if (tileEvent != null)
+                        {
+                            tileEvent.SetUndraggable();
+                        }
+                    }
+                    else
+                    {
+                        GameObject tile = Instantiate(tilePrefab, blockGroup.transform);
+                        tile.name = TileDictionary.NumToString[block.Tile];
+                        RectTransform tileRect = tile.GetComponent<RectTransform>();
+                        tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+                        tileRect.anchoredPosition = new Vector2(tile_space, 0);
+                        tile_space += tileWidth + spacing;
+
+
+                        TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                        if (tileEvent != null)
+                        {
+                            tileEvent.SetUndraggable();
+                        }
+                    }
+                }
+            }
+            else if (block.Type == (int)BlockType.QUAD)
+            {
+                if (block.Source == (int)BlockSource.SELF)
+                {
+                    blockGroupRect.sizeDelta = new Vector2(tileWidth * 4 + spacing * 3, tileHeight);
+                    float tile_space = 0;
+                    GameObject tilePrefab = TilePrefabArray[block.Tile];
+                    for (int i = 0; i < 4; i++)
+                    {
+                        GameObject tile = Instantiate(tilePrefab, blockGroup.transform);
+                        tile.name = TileDictionary.NumToString[block.Tile];
+                        RectTransform tileRect = tile.GetComponent<RectTransform>();
+                        tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+                        tileRect.anchoredPosition = new Vector2(tile_space, 0);
+                        tile_space += tileWidth + spacing;
+
+                        TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                        if (tileEvent != null)
+                        {
+                            tileEvent.SetUndraggable();
+                        }
+                    }
+                }
+                else
+                {
+                    blockGroupRect.sizeDelta = new Vector2((tileWidth + spacing) * 3 + tileHeight, tileHeight);
+                    float tile_space = 0;
+                    GameObject tilePrefab = TilePrefabArray[block.Tile];
+                    for (int i = 0; i < 4; i++)
+                    {
+                        if (((int)block.Source == 3 && i == 3) || ((int)block.Source != 3 && i == (int)block.Source - 1))
+                        {
+                            GameObject tile = Instantiate(tilePrefab, blockGroup.transform);
+                            tile.name = TileDictionary.NumToString[block.Tile];
+                            RectTransform tileRect = tile.GetComponent<RectTransform>();
+                            tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+                            tileRect.anchoredPosition = new Vector2(tile_space, -tileHeight); // 아래로 배치
+                            tile_space += tileHeight + spacing;
+                            tileRect.localRotation = Quaternion.Euler(0, 0, 90); // 눕히기
+
+                            TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                            if (tileEvent != null)
+                            {
+                                tileEvent.SetUndraggable();
+                            }
+                        }
+                        else
+                        {
+                            GameObject tile = Instantiate(tilePrefab, blockGroup.transform);
+                            tile.name = TileDictionary.NumToString[block.Tile];
+                            RectTransform tileRect = tile.GetComponent<RectTransform>();
+                            tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+
+                            tileRect.anchoredPosition = new Vector2(tile_space, 0);
+                            tile_space += tileWidth + spacing;
+
+                            TileEvent tileEvent = tile.GetComponent<TileEvent>();
+                            if (tileEvent != null)
+                            {
+                                tileEvent.SetUndraggable();
+                            }
+                        }
+                    }
+                }
+            }
+
+            currentXPosition += blockGroupRect.sizeDelta.x + groupSpacing;
+        }
+
+        // 3. 쯔모패 표시
+        if (true)
+        {
+            GameObject tile = Instantiate(TilePrefabArray[hand.WinningTile], handField.transform);
+            tile.name = TileDictionary.NumToString[hand.WinningTile];
+
+            RectTransform tileRect = tile.GetComponent<RectTransform>();
+            tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+            tileRect.anchoredPosition = new Vector2(currentXPosition, 0);
+
+
+
+            TileEvent tileEvent = tile.GetComponent<TileEvent>();
+            if (tileEvent != null)
+            {
+                tileEvent.SetUndraggable();
+            }
+        }
+    }
+
+    // BlockType에 따른 타일 개수 반환
+    private int GetBlockTileCount(BlockType type)
+    {
+        return type switch
+        {
+            BlockType.SEQUENCE => 3,
+            BlockType.TRIPLET => 3,
+            BlockType.QUAD => 4,
+            BlockType.PAIR => 2,
+            BlockType.KNITTED => 3,
+            _ => 1
+        };
+    }
+
+
 
     [TargetRpc]
-    public void TargetShowRoundScore(NetworkConnection target, int playerIndex, List<YakuScoreData> huYakuScoreArray, int totalScore)
+    public void TargetShowRoundScore(NetworkConnection target, int playerIndex, List<YakuScoreData> huYakuScoreArray, int totalScore, HandData hand)
     {
+        //DeleteButtons();
         // Main Canvas 찾기
         GameObject mainCanvas = GameObject.Find("Main Canvas");
         if (mainCanvas == null)
@@ -248,12 +1394,17 @@ public class PlayerManager : NetworkBehaviour
             return;
         }
 
+
         // 팝업 UI 생성
         popupObject = Instantiate(popupPrefab, mainCanvas.transform); // Main Canvas에 추가
         RectTransform popupRect = popupObject.GetComponent<RectTransform>();
 
         TMP_Text scoreText = popupObject.transform.Find("Canvas/ScoreListText").GetComponent<TMP_Text>();
         TMP_Text totalScoreText = popupObject.transform.Find("Canvas/TotalScoreText").GetComponent<TMP_Text>();
+
+        GameObject HandField = popupObject.transform.Find("Canvas/HandField").gameObject;
+        ShowHand(HandField, hand);
+
 
         if (scoreText == null || totalScoreText == null)
         {
@@ -320,7 +1471,7 @@ public class PlayerManager : NetworkBehaviour
             Debug.LogError("[TargetShowRoundScore] ConfirmButton not found in popup prefab.");
             return;
         }
-
+        DeleteButtons();
         IsPopupConfirmed = false;
         confirmButton.onClick.AddListener(() =>
         {
@@ -340,6 +1491,34 @@ public class PlayerManager : NetworkBehaviour
             Destroy(popupObject);
             popupObject = null;
         }
+    }
+
+    [TargetRpc]
+    public void TargetSetRemainingTimeZero(NetworkConnection conn)
+    {
+        PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
+
+        if (allPlayerManagers.Length == 0)
+        {
+            Debug.LogWarning("No PlayerManager instances found in the scene.");
+            return;
+        }
+
+        foreach (var playerManager in allPlayerManagers)
+        {
+            if (playerManager == null)
+                continue;
+            if (playerManager.isOwned)
+            {
+                playerManager.setRemainingTimeZero();
+                return;
+            }
+        }
+    }
+
+    public void setRemainingTimeZero()
+    {
+        remainingTime = -1f;
     }
 
     public float getRemainingTime()
@@ -483,12 +1662,15 @@ public class PlayerManager : NetworkBehaviour
         EnemyHaipaiList[1] = EnemyHaipaiToi;
         EnemyHaipaiList[2] = EnemyHaipaiKami;
 
-
+        PlayerFuroField = GameObject.Find("PlayerFuroField");
+        EnemyFuroFieldShimo = GameObject.Find("EnemyFuroFieldShimo");
+        EnemyFuroFieldToi = GameObject.Find("EnemyFuroFieldToi");
+        EnemyFuroFieldKami = GameObject.Find("EnemyFuroFieldKami");
+        
         DisableFlowerFields();
         GameStatusUI = GameObject.Find("GameStatusUI");
 
         DeleteButtons();
-        InitializeButtonList();
     }
 
     void Awake()
@@ -703,6 +1885,167 @@ public class PlayerManager : NetworkBehaviour
     }
 
 
+    [TargetRpc]
+    public void TargetShominKanTile(NetworkConnection target, int tile, int playerIndex)
+    {
+        GameObject FuroField = PlayerFuroField;
+        GameObject HaipaiField = PlayerHaipai;
+        if (playerIndex != PlayerIndex)
+        {
+            int relativeIndex = GetRelativeIndex(playerIndex);
+            switch (relativeIndex)
+            {
+                case 0:
+                    HaipaiField = EnemyHaipaiShimo;
+                    FuroField = EnemyFuroFieldShimo;
+                    break;
+                case 1:
+                    HaipaiField = EnemyHaipaiToi;
+                    FuroField = EnemyFuroFieldToi;
+                    break;
+                case 2:
+                    HaipaiField = EnemyHaipaiKami;
+                    FuroField = EnemyFuroFieldKami;
+                    break;
+            }
+        }
+        Debug.Log($"[TargetShominKanTile] called with tile {tile}.");
+
+        // 타일 생성
+        GameObject spawnedTile = Instantiate(TilePrefabArray[tile], PlayerHaipai.transform);
+        if (spawnedTile == null)
+        {
+            Debug.LogError("spawnedTile is null.");
+            return;
+        }
+        spawnedTile.name = TileDictionary.NumToString[tile];
+        // TileEvent의 isDraggable 설정
+        TileEvent tileEvent = spawnedTile.GetComponent<TileEvent>();
+        if (tileEvent != null)
+        {
+            tileEvent.SetUndraggable();
+        }
+
+        TileGrid tileGridHaipai = HaipaiField.GetComponent<TileGrid>();
+        if (tileGridHaipai != null)
+        {
+            tileGridHaipai.DestoryByTileId(tile);
+        }
+        // 조건에 맞는 하위 오브젝트 찾기
+        Transform targetChild = FindMatchingChild(FuroField.transform, tile);
+
+        if (targetChild != null)
+        {
+            // 회전된 자식을 찾기
+            Transform rotatedChild = null;
+
+            foreach (Transform grandChild in targetChild)
+            {
+                // Z축 회전이 90도 또는 -90도인 자식 찾기
+                if (Mathf.Abs(grandChild.localRotation.eulerAngles.z - 90) < 1f || Mathf.Abs(grandChild.localRotation.eulerAngles.z - 270) < 1f)
+                {
+                    rotatedChild = grandChild;
+                    break;  // 첫 번째 회전된 자식만 찾으면 종료
+                }
+            }
+
+            if (rotatedChild != null)
+            {
+                // 찾은 회전된 자식의 하위로 타일 추가
+                spawnedTile.transform.SetParent(rotatedChild.parent, false);  // 부모는 rotatedChild의 부모로 유지
+
+                // RectTransform 가져오기
+                RectTransform rotatedRect = rotatedChild.GetComponent<RectTransform>();
+                RectTransform tileRect = spawnedTile.GetComponent<RectTransform>();
+
+                if (rotatedRect != null && tileRect != null)
+                {
+                    // 회전된 자식의 크기와 동일하게 크기 조정
+                    tileRect.sizeDelta = rotatedRect.sizeDelta;
+
+                    // 회전된 자식의 위치와 동일하게 배치
+                    float offsetY = rotatedRect.sizeDelta.x;
+                    tileRect.anchoredPosition = new Vector2(rotatedRect.anchoredPosition.x, rotatedRect.anchoredPosition.y + offsetY);
+
+                    // 회전된 자식과 동일하게 회전 적용
+                    tileRect.localRotation = rotatedRect.localRotation;
+
+                    Debug.Log($"[TargetShominKanTile] Tile placed, sized, and rotated above rotated child: {rotatedChild.name}");
+                }
+                else
+                {
+                    Debug.LogError("RectTransform is missing on rotatedChild or spawnedTile.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[TargetShominKanTile] No rotated child found.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[TargetShominKanTile] No matching child found.");
+        }
+
+
+    }
+
+    /// <summary>
+    /// FuroField의 하위에서 조건에 맞는 자식을 찾는 함수
+    /// </summary>
+    /// <param name="parent">탐색할 부모 Transform</param>
+    /// <param name="tile">타일 ID</param>
+    /// <returns>조건에 맞는 Transform (없으면 null)</returns>
+    private Transform FindMatchingChild(Transform parent, int tile)
+    {
+        // 타일 이름 앞 두 글자 (예: "1m", "5p")
+        string tilePrefix = TileDictionary.NumToString[tile].Substring(0, 2);
+        Debug.Log($"[FindMatchingChild] Searching for children with prefix: {tilePrefix}");
+
+        foreach (Transform child in parent)
+        {
+            Debug.Log($"[FindMatchingChild] Checking child: {child.name} with {child.childCount} children.");
+
+            // 자식의 하위 오브젝트가 정확히 3개인지 확인
+            if (child.childCount == 3)
+            {
+                bool allMatch = true;
+
+                // 자식의 하위 오브젝트를 검사
+                foreach (Transform grandChild in child)
+                {
+                    string grandChildPrefix = grandChild.name.Length >= 2 ? grandChild.name.Substring(0, 2) : grandChild.name;
+
+                    Debug.Log($"[FindMatchingChild] Checking grandChild: {grandChild.name}, Prefix: {grandChildPrefix}");
+
+                    // 하위 오브젝트의 이름 앞 두 글자가 tilePrefix와 일치하는지 확인
+                    if (grandChildPrefix != tilePrefix)
+                    {
+                        Debug.LogWarning($"[FindMatchingChild] Mismatch found! Expected: {tilePrefix}, Found: {grandChildPrefix}");
+                        allMatch = false;
+                        break;  // 하나라도 다르면 중단
+                    }
+                }
+
+                // 하위 오브젝트 3개가 모두 일치하면 반환
+                if (allMatch)
+                {
+                    Debug.Log($"[FindMatchingChild] Found matching child: {child.name}");
+                    return child;
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[FindMatchingChild] Skipping {child.name} because it has {child.childCount} children (expected 3).");
+            }
+        }
+
+        Debug.LogWarning("[FindMatchingChild] No matching child found.");
+        return null;  // 조건을 만족하는 자식이 없으면 null 반환
+    }
+
+
+
 
     [TargetRpc]
     public void TargetTsumoTile(NetworkConnection target, int tile, int playerIndex)
@@ -822,44 +2165,74 @@ public class PlayerManager : NetworkBehaviour
         }
     }
 
+    [Server]
+    public void ForceDiscardByTileId(int tileId)
+    {
+
+        //string prefix = TileDictionary.NumToString[tileId].Substring(0, 2);
+
+        TargetForceDiscardByTileId(connectionToClient, PlayerIndex, tileId);
+
+    }
+
+    [TargetRpc]
+    public void TargetForceDiscardByTileId(NetworkConnection conn, int playerIndex, int tileId)
+    {
+        PlayerManager playerManager = FindMyPlayerManager(playerIndex);
+        if (playerManager != null && playerManager.PlayerHaipai != null)
+        {
+            TileGrid tileGrid = playerManager.PlayerHaipai.GetComponent<TileGrid>();
+            if (tileGrid != null)
+            {
+                tileGrid.DiscardTileByTileId(tileId);
+            }
+        }
+    }
+
 
     [Server]
-    public void ForceDiscardTile(string tileName, bool isTsumoTile)
+    public void ForceDiscardTile()
     {
-        string prefix = tileName.Substring(0, 2);
 
-        if (!TileDictionary.StringToNum.TryGetValue(prefix, out int tileId))
+        //string prefix = TileDictionary.NumToString[tileId].Substring(0, 2);
+
+        TargetForceDiscardTsumoTile(connectionToClient, PlayerIndex);
+
+    }
+
+    [TargetRpc]
+    public void TargetForceDiscardTsumoTile(NetworkConnection conn, int playerIndex)
+    {
+        PlayerManager playerManager = FindMyPlayerManager(playerIndex);
+        if (playerManager != null && playerManager.PlayerHaipai != null)
         {
-            Debug.LogError($"Invalid tile prefix: {prefix}");
-            return;
+            TileGrid tileGrid = playerManager.PlayerHaipai.GetComponent<TileGrid>();
+            if (tileGrid != null)
+            {
+                tileGrid.DiscardTsumoTile();
+            }
         }
+    }
 
-        if (PlayerKawa == null)
-        {
-            Debug.LogError("PlayerKawa is null. Cannot get TileGrid component.");
-            return;
-        }
 
+    private PlayerManager FindMyPlayerManager(int playerIndex)
+    {
         PlayerManager[] allPlayerManagers = UnityEngine.Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
 
         if (allPlayerManagers.Length == 0)
         {
             Debug.LogWarning("No PlayerManager instances found in the scene.");
-            return;
+            return null;
         }
 
         Debug.Log($"Found {allPlayerManagers.Length} PlayerManager instances:");
         foreach (var playerManager in allPlayerManagers)
         {
-            NetworkConnection networkConnection = playerManager.GetComponent<NetworkIdentity>().connectionToClient;
-            Debug.Log($"Assigned PlayerIndex {playerManager.PlayerIndex} to PlayerManager with NetId: {playerManager.GetComponent<NetworkIdentity>().netId}");
-            if (networkConnection != null)
-            {
-                TargetDiscardTile(networkConnection, tileId, PlayerIndex, isTsumoTile);
-            }
+            if (playerManager.PlayerIndex == playerIndex)
+                return playerManager; 
         }
+        return null;
     }
-
 
 
     [Command]
@@ -1072,35 +2445,108 @@ public class PlayerManager : NetworkBehaviour
     }
 
 
+    [ClientRpc]
+    public void RpcSetRemainingTimeDefault()
+    {
+        remainingTime = -1f;
+    }
+
     [Command]
     public void CmdReturnActionDecision(int playerWindIndex, ActionPriorityInfo actionPriorityInfo, int actionTurnId, int tileId)
     {
-        remainingTime = -1;
+        //remainingTime = -1;
         serverManager.StartCoroutine(serverManager.ReceiveActionDecisionCoroutine(playerWindIndex, actionPriorityInfo, actionTurnId, tileId));
     }
 
     private bool decisionMade = false; // 전역 변수로 이동하여 버튼 클릭 상태를 추적
 
-    private IEnumerator MakeButtonsAndHandlePlayerDecision(int playerIndex, List<ActionPriorityInfo> actions, int actionTurnId, int tileId)
+    public const float remainingTimeForEveryTurn = 60f;
+
+
+    [Command]
+    public void CmdReturnDecisionTimeOut(int actionTurnId, int playerWindIndex)
+    {
+        Debug.Log($"[CmdReturnDecisionTimeOut] Called. ActionTurnId: {actionTurnId}, PlayerWindIndex: {playerWindIndex}");
+
+        if (serverManager == null)
+        {
+            Debug.LogError("[CmdReturnDecisionTimeOut] serverManager is null.");
+            return;
+        }
+
+        remainingTime = -1;
+        serverManager.ReceiveTimeoutDecision(actionTurnId, playerWindIndex);
+        Debug.Log($"[CmdReturnDecisionTimeOut] Decision timeout processed for PlayerWindIndex: {playerWindIndex}");
+    }
+
+
+    private IEnumerator WaitPlayerDecision(int actionTurnId, int playerWindIndex)
+    {
+        Debug.Log($"[WaitPlayerDecision] Started. ActionTurnId: {actionTurnId}, PlayerWindIndex: {playerWindIndex}");
+
+        remainingTime = -1;
+
+        remainingTime = remainingTimeForEveryTurn;
+        remainingTimeActionId = actionTurnId;
+        int localactionId = actionTurnId;
+        while (remainingTime > 0 && remainingTimeActionId == localactionId)
+        {
+            Debug.Log($"[WaitPlayerDecision] Remaining Time: {remainingTime:F2}s for PlayerWindIndex: {playerWindIndex}");
+            remainingTime -= Time.deltaTime;
+            yield return null;
+        }
+
+
+
+        Debug.Log($"[WaitPlayerDecision] Time expired. Triggering CmdReturnDecisionTimeOut for PlayerWindIndex: {playerWindIndex}");
+        //CmdReturnDecisionTimeOut(actionTurnId, playerWindIndex);
+        DeleteButtons();
+        CmdReturnActionDecision(playerWindIndex, new ActionPriorityInfo(ActionType.TIMEOUT, 0, -1), actionTurnId, -1);
+        yield break;
+    }
+
+
+    [TargetRpc]
+    public void TargetWaitPlayerDecision(NetworkConnection conn, int actionTurnId, int playerWindIndex)
+    {
+        Debug.Log($"[TargetWaitPlayerDecision] Called on client. ActionTurnId: {actionTurnId}, PlayerWindIndex: {playerWindIndex}");
+
+        //if (conn == null)
+        //{
+        //    Debug.LogError("[TargetWaitPlayerDecision] NetworkConnection is null.");
+        //    return;
+        //}
+        PlayerManager playerManager = GetOwnedPlayerManager();
+        playerManager.StartCoroutine(playerManager.WaitPlayerDecision(actionTurnId, playerWindIndex));
+        Debug.Log($"[TargetWaitPlayerDecision] Coroutine for player decision started.");
+    }
+
+
+
+    private IEnumerator MakeButtonsAndHandlePlayerDecision(int playerWindIndex, List<ActionPriorityInfo> actions, int actionTurnId, int tileId)
     {
         Debug.Log("[MakeButtonsAndHandlePlayerDecision] Starting decision coroutine.");
 
         decisionMade = false;
         if (actions.Count == 0)
         {
-            remainingTime = 60f;
-
-            while (remainingTime > 0 && !decisionMade)
+            remainingTime = -1;
+            remainingTime = remainingTimeForEveryTurn;
+            remainingTimeActionId = actionTurnId;
+            int localactionId_1 = actionTurnId;
+            while (remainingTime > 0 && remainingTimeActionId == localactionId_1 && !decisionMade)
             {
                 remainingTime -= Time.deltaTime;
                 yield return null;
             }
 
-            if (!decisionMade)
+            if (remainingTimeActionId == localactionId_1 && !decisionMade)
             {
-                Debug.Log("[MakeButtonsAndHandlePlayerDecision] Time is up. Defaulting to Skip.");
+                Debug.Log("[MakeButtonsAndHandlePlayerDecision] Time is up. Defaulting to TIMEOUT.");
                 remainingTime = -1;
-                CmdReturnActionDecision(playerIndex, new ActionPriorityInfo(ActionType.TIMEOUT, 0, -1), actionTurnId, tileId);
+                DeleteButtons();
+                //CmdReturnDecisionTimeOut(actionTurnId, playerWindIndex);
+                CmdReturnActionDecision(playerWindIndex, new ActionPriorityInfo(ActionType.TIMEOUT, 0, -1), actionTurnId, tileId);
             }
             yield break;
         }
@@ -1110,7 +2556,10 @@ public class PlayerManager : NetworkBehaviour
         if (mainCanvas == null)
         {
             Debug.LogError("[MakeButtonsAndHandlePlayerDecision] Main Canvas not found.");
-            CmdReturnActionDecision(playerIndex, new ActionPriorityInfo(ActionType.SKIP, priority, -1), actionTurnId, tileId);
+            remainingTime = -1;
+            DeleteButtons();
+            
+            CmdReturnActionDecision(playerWindIndex, new ActionPriorityInfo(ActionType.SKIP, priority, -1), actionTurnId, tileId);
             yield break;
         }
 
@@ -1119,7 +2568,9 @@ public class PlayerManager : NetworkBehaviour
         if (playerHaipaiRect == null)
         {
             Debug.LogError("[MakeButtonsAndHandlePlayerDecision] PlayerHaipai RectTransform not found.");
-            CmdReturnActionDecision(playerIndex, new ActionPriorityInfo(ActionType.SKIP, priority, -1), actionTurnId, tileId);
+            remainingTime = -1;
+            DeleteButtons();
+            CmdReturnActionDecision(playerWindIndex, new ActionPriorityInfo(ActionType.SKIP, priority, -1), actionTurnId, tileId);
             yield break;
         }
 
@@ -1132,7 +2583,12 @@ public class PlayerManager : NetworkBehaviour
         if (skipButtonRect == null)
         {
             Debug.LogError("[MakeButtonsAndHandlePlayerDecision] SkipButton RectTransform not found.");
-            CmdReturnActionDecision(playerIndex, new ActionPriorityInfo(ActionType.SKIP, priority, -1), actionTurnId, tileId);
+            DeleteButtons();
+            if (priority != 0)
+            {
+                remainingTime = -1;
+            }
+            CmdReturnActionDecision(playerWindIndex, new ActionPriorityInfo(ActionType.SKIP, priority, -1), actionTurnId, tileId);
             yield break;
         }
 
@@ -1213,8 +2669,10 @@ public class PlayerManager : NetworkBehaviour
                     actionButton.GetComponent<Button>().onClick.AddListener(() =>
                     {
                         Debug.Log($"[MakeButtonsAndHandlePlayerDecision] {selectedAction.Type} button clicked with single choice.");
+                        remainingTime = -1;
                         decisionMade = true;
-                        CmdReturnActionDecision(playerIndex, selectedAction, actionTurnId, tileId);
+                        DeleteButtons();
+                        CmdReturnActionDecision(playerWindIndex, selectedAction, actionTurnId, tileId);
                     });
                 }
                 else
@@ -1223,7 +2681,7 @@ public class PlayerManager : NetworkBehaviour
                     actionButton.GetComponent<Button>().onClick.AddListener(() =>
                     {
                         Debug.Log($"[MakeButtonsAndHandlePlayerDecision] {actionPair.Key} button clicked with multiple choices.");
-                        ShowAdditionalChoices(playerIndex, actionPair.Value, actionTurnId, tileId);
+                        ShowAdditionalChoices(playerWindIndex, actionPair.Key, actionPair.Value, actionTurnId, tileId);
                     });
                 }
 
@@ -1235,40 +2693,59 @@ public class PlayerManager : NetworkBehaviour
         skipButton.GetComponent<Button>().onClick.AddListener(() =>
         {
             Debug.Log("[MakeButtonsAndHandlePlayerDecision] Skip button clicked.");
-            remainingTime = -1;
+            //remainingTime = -1;
+            if (priority != 0)
+            {
+                remainingTime = -1;
+            }
             decisionMade = true;
-            CmdReturnActionDecision(playerIndex, new ActionPriorityInfo(ActionType.SKIP, priority, -1), actionTurnId, tileId);
+            DeleteButtons();
+            CmdReturnActionDecision(playerWindIndex, new ActionPriorityInfo(ActionType.SKIP, priority, -1), actionTurnId, tileId);
         });
-
+        remainingTime = -1;
         // 20초 타이머 시작
-        remainingTime = 60f;
+        remainingTime = remainingTimeForEveryTurn;
+        remainingTimeActionId = actionTurnId;
+        int localactionId = actionTurnId;
+        bool buttonsDeleted = false; // 버튼 삭제 여부 체크
 
-        while (remainingTime > 0 && !decisionMade)
+        while (remainingTime > 0)
         {
             remainingTime -= Time.deltaTime;
-            yield return null;
+            if (remainingTimeActionId != localactionId)
+            {
+                break;
+            }
+            // 결정이 완료되었고 버튼이 아직 삭제되지 않았다면 버튼 삭제
+            if (decisionMade && !buttonsDeleted)
+            {
+                DeleteButtons();
+                buttonsDeleted = true;
+                Debug.Log("[MakeButtonsAndHandlePlayerDecision] Decision made. Buttons destroyed.");
+            }
+
+            // 시간이 다 되었고 결정이 안 되었을 때만 Timeout 처리
+            if (remainingTime <= 0 && !decisionMade && remainingTimeActionId == localactionId)
+            {
+                Debug.Log("[MakeButtonsAndHandlePlayerDecision] Time is up. Defaulting to Skip.");
+                //CmdReturnDecisionTimeOut(actionTurnId, playerWindIndex);
+                CmdReturnActionDecision(playerWindIndex, new ActionPriorityInfo(ActionType.TIMEOUT, priority, -1), actionTurnId, tileId);
+                // 버튼 삭제
+                DeleteButtons();
+                buttonsDeleted = true;
+            }
+
+            yield return null;  // 매 프레임 대기
         }
-
-        if (!decisionMade)
-        {
-            Debug.Log("[MakeButtonsAndHandlePlayerDecision] Time is up. Defaulting to Skip.");
-            remainingTime = -1;
-            CmdReturnActionDecision(playerIndex, new ActionPriorityInfo(ActionType.TIMEOUT, priority, -1), actionTurnId, tileId);
-        }
-
-        // 버튼 제거
-        DeleteButtons();
-
-        Debug.Log("[MakeButtonsAndHandlePlayerDecision] Buttons destroyed. Decision process completed.");
     }
 
     private GameObject additionalChoicesContainer;
     public GameObject backButtonPrefab;
     private GameObject backButton;
     // 추가 선택지를 보여주는 함수
-    private void ShowAdditionalChoices(int playerIndex, List<ActionPriorityInfo> choices, int actionTurnId, int tileId)
+    private void ShowAdditionalChoices(int playerIndex, ActionType actionType, List<ActionPriorityInfo> choices, int actionTurnId, int tileId)
     {
-        Debug.Log("[ShowAdditionalChoices] Displaying additional choices.");
+        Debug.Log($"[ShowAdditionalChoices] Displaying additional choices about {actionType.ToString()}.");
 
         // 기존 버튼 비활성화
         DisableButtons();
@@ -1322,16 +2799,35 @@ public class PlayerManager : NetworkBehaviour
             });
         }
 
+        float tileWidth = 50;
+        float tileHeight = 75;
         // 선택지 버튼 생성
-        float buttonWidth = 120;
-        float buttonHeight = 50;
+        float buttonWidth;
+        float buttonHeight = tileHeight;
+        if (actionType == ActionType.CHII)
+        {
+            buttonWidth = tileWidth * 3;
+        }
+        else // kan
+        {
+            buttonWidth = tileWidth * 4;
+        }
         float spacing = 10; // 버튼 간격
 
-        int index = 0;
-        foreach (var choice in choices)
+        int index = -1;
+        choices.Sort();
+        foreach (ActionPriorityInfo choice in choices)
         {
+            if (choice.Type != actionType)
+            {
+                continue;
+            }
+
+            // 로컬 변수로 복사
+            ActionPriorityInfo localChoice = choice;
+
             // 버튼 생성
-            GameObject choiceButton = new GameObject($"ChoiceButton_{choice.Type}_{index++}", typeof(RectTransform), typeof(Button), typeof(Image));
+            GameObject choiceButton = new GameObject($"ChoiceButton_{localChoice.Type}_{index++}", typeof(RectTransform), typeof(Button), typeof(Image));
             choiceButton.transform.SetParent(additionalChoicesContainer.transform, false);
             RectTransform choiceButtonRect = choiceButton.GetComponent<RectTransform>();
             choiceButtonRect.sizeDelta = new Vector2(buttonWidth, buttonHeight);
@@ -1351,15 +2847,15 @@ public class PlayerManager : NetworkBehaviour
             tileGroupRect.pivot = new Vector2(0.5f, 0.5f);
             tileGroupRect.localPosition = Vector3.zero;
 
-            if (choice.Type == ActionType.CHII)
+            if (localChoice.Type == ActionType.CHII)
             {
                 // CHII의 경우 TileId, TileId+1, TileId+2
                 for (int i = 0; i < 3; i++)
                 {
-                    GameObject tile = Instantiate(TilePrefabArray[choice.TileId + i], tileGroup.transform);
+                    GameObject tile = Instantiate(TilePrefabArray[localChoice.TileId + i], tileGroup.transform);
                     RectTransform tileRect = tile.GetComponent<RectTransform>();
-                    tileRect.sizeDelta = new Vector2(30, 30);
-                    tileRect.anchoredPosition = new Vector2((i - 1) * 35, 0); // 타일 간격
+                    tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+                    tileRect.anchoredPosition = new Vector2(i * tileWidth, 0); // 타일 간격
 
                     // TileEvent의 isDraggable 설정
                     TileEvent tileEvent = tile.GetComponent<TileEvent>();
@@ -1367,23 +2863,38 @@ public class PlayerManager : NetworkBehaviour
                     {
                         tileEvent.SetUndraggable();
                     }
+
+                    // RaycastTarget 비활성화
+                    Image tileImage = tile.GetComponent<Image>();
+                    if (tileImage != null)
+                    {
+                        tileImage.raycastTarget = false;
+                    }
                 }
             }
-            else if (choice.Type == ActionType.KAN)
+            else if (localChoice.Type == ActionType.KAN)
             {
+                tileGroupRect.sizeDelta = new Vector2(buttonWidth / 3 * 4, buttonHeight);
                 // KAN의 경우 TileId 4개
                 for (int i = 0; i < 4; i++)
                 {
-                    GameObject tile = Instantiate(TilePrefabArray[choice.TileId], tileGroup.transform);
+                    GameObject tile = Instantiate(TilePrefabArray[localChoice.TileId], tileGroup.transform);
                     RectTransform tileRect = tile.GetComponent<RectTransform>();
-                    tileRect.sizeDelta = new Vector2(30, 30);
-                    tileRect.anchoredPosition = new Vector2((i - 1.5f) * 35, 0); // 타일 간격
+                    tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
+                    tileRect.anchoredPosition = new Vector2(i * buttonWidth, 0); // 타일 간격
 
                     // TileEvent의 isDraggable 설정
                     TileEvent tileEvent = tile.GetComponent<TileEvent>();
                     if (tileEvent != null)
                     {
                         tileEvent.SetUndraggable();
+                    }
+
+                    // RaycastTarget 비활성화
+                    Image tileImage = tile.GetComponent<Image>();
+                    if (tileImage != null)
+                    {
+                        tileImage.raycastTarget = false;
                     }
                 }
             }
@@ -1391,9 +2902,10 @@ public class PlayerManager : NetworkBehaviour
             // 버튼 클릭 이벤트
             choiceButton.GetComponent<Button>().onClick.AddListener(() =>
             {
-                Debug.Log($"[ShowAdditionalChoices] {choice.Type} choice clicked.");
-                DestroyAdditionalChoices(); // 추가 선택지 삭제
-                CmdReturnActionDecision(playerIndex, choice, actionTurnId, tileId); // 선택 결과 전송
+                Debug.Log($"[ShowAdditionalChoices] {localChoice.Type} choice {TileDictionary.NumToString[localChoice.TileId]} clicked.");
+                remainingTime = -1;
+                DeleteButtons(); // 추가 선택지 삭제
+                CmdReturnActionDecision(playerIndex, localChoice, actionTurnId, tileId); // 선택 결과 전송
             });
         }
 
@@ -1418,123 +2930,6 @@ public class PlayerManager : NetworkBehaviour
     }
 
 
-    [TargetRpc]
-    public void TargetWaitForPlayerDecision(NetworkConnection target, int playerIndex, int totalScore)
-    {
-        StartCoroutine(ClientWaitForPlayerDecision(playerIndex, totalScore));
-    }
-
-    private IEnumerator ClientWaitForPlayerDecision(int playerIndex, int totalScore)
-    {
-        Debug.Log("[ClientWaitForPlayerDecision] Starting decision coroutine.");
-
-        // `Main Canvas` 찾기
-        Canvas mainCanvas = GameObject.Find("Main Canvas").GetComponent<Canvas>();
-        if (mainCanvas == null)
-        {
-            Debug.LogError("[ClientWaitForPlayerDecision] Main Canvas not found.");
-            CmdReturnDecision(playerIndex, false);
-            yield break;
-        }
-
-        // `PlayerHaipai`의 RectTransform 가져오기
-        RectTransform playerHaipaiRect = PlayerHaipai.GetComponent<RectTransform>();
-        if (playerHaipaiRect == null)
-        {
-            Debug.LogError("[ClientWaitForPlayerDecision] PlayerHaipai RectTransform not found.");
-            CmdReturnDecision(playerIndex, false);
-            yield break;
-        }
-
-        Vector3 playerHaipaiPosition = playerHaipaiRect.localPosition;
-        Vector3 playerHaipaiScale = playerHaipaiRect.localScale;
-
-        // Skip 버튼 생성 및 위치 설정
-        skipButton = Instantiate(skipButtonPrefab, mainCanvas.transform);
-        RectTransform skipButtonRect = skipButton.GetComponent<RectTransform>();
-        if (skipButtonRect == null)
-        {
-            Debug.LogError("[ClientWaitForPlayerDecision] SkipButton RectTransform not found.");
-            CmdReturnDecision(playerIndex, false);
-            yield break;
-        }
-
-        skipButtonRect.localPosition = new Vector3(
-            playerHaipaiPosition.x + playerHaipaiRect.sizeDelta.x * playerHaipaiScale.x,
-            playerHaipaiPosition.y + (playerHaipaiRect.sizeDelta.y / 2) * playerHaipaiScale.y,
-            0
-        );
-
-        Debug.Log($"[ClientWaitForPlayerDecision] SkipButton position set to {skipButtonRect.localPosition}.");
-
-        // Hu 버튼 생성 및 위치 설정
-        huButton = Instantiate(huButtonPrefab, mainCanvas.transform);
-        RectTransform huButtonRect = huButton.GetComponent<RectTransform>();
-        if (huButtonRect == null)
-        {
-            Debug.LogError("[ClientWaitForPlayerDecision] HuButton RectTransform not found.");
-            CmdReturnDecision(playerIndex, false);
-            yield break;
-        }
-
-        huButtonRect.localPosition = new Vector3(
-            skipButtonRect.localPosition.x - (skipButtonRect.sizeDelta.x * skipButtonRect.localScale.x),
-            skipButtonRect.localPosition.y,
-            0
-        );
-
-        Debug.Log($"[ClientWaitForPlayerDecision] HuButton position set to {huButtonRect.localPosition}.");
-
-        bool decisionMade = false;
-        bool isHu = false;
-
-        // Hu 버튼 클릭 이벤트 추가
-        huButton.GetComponent<Button>().onClick.AddListener(() =>
-        {
-            Debug.Log("[ClientWaitForPlayerDecision] Hu button clicked.");
-            decisionMade = true;
-            isHu = true;
-        });
-
-        // Skip 버튼 클릭 이벤트 추가
-        skipButton.GetComponent<Button>().onClick.AddListener(() =>
-        {
-            Debug.Log("[ClientWaitForPlayerDecision] Skip button clicked.");
-            decisionMade = true;
-            isHu = false;
-        });
-
-        Debug.Log("[ClientWaitForPlayerDecision] Button click events added.");
-
-        // 플레이어의 결정을 대기
-        yield return new WaitUntil(() => decisionMade);
-
-        Debug.Log("[ClientWaitForPlayerDecision] Player decision made.");
-
-        // 버튼 제거
-        //Destroy(huButton);
-        //Destroy(skipButton);
-        DeleteButtons();
-        Debug.Log("[ClientWaitForPlayerDecision] Buttons destroyed.");
-
-        CmdReturnDecision(playerIndex, isHu);
-    }
-
-
-    [Command]
-    private void CmdReturnDecision(int playerIndex, bool isHu)
-    {
-        Debug.Log($"[CmdReturnDecision] Player {playerIndex} decision: {(isHu ? "Hu" : "Skip")}");
-
-        if (isHu)
-        {
-            serverManager.FinalizeRoundScore(playerIndex);
-        }
-        else
-        {
-            Debug.Log($"[CmdReturnDecision] Player {playerIndex} skipped Hu.");
-        }
-    }
 
 
     private bool IsTargetDiscardTileRunning = false; // TargetDiscardTile 실행 상태를 나타내는 플래그
@@ -1860,6 +3255,8 @@ public class PlayerManager : NetworkBehaviour
         EnemyHaipaiList[1] = EnemyHaipaiToi;
         EnemyHaipaiList[2] = EnemyHaipaiKami;
 
+        PlayerFuroField = GameObject.Find("PlayerFuroField");
+
         // ServerManager에 플레이어 등록
         serverManager.IncrementPlayerCount();
     }
@@ -1938,6 +3335,7 @@ public class PlayerManager : NetworkBehaviour
                 gameStatusUI.Initialize();
             }
         }
+        DestoryAllChildrenOfFuroFields();
         DisableFlowerFields();
         CmdSetInitializeFlagEnd();
     }
