@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using Game.Shared;
 using UnityEngine;
 
@@ -296,25 +297,67 @@ namespace DataTransfer
         }
     }
 
+
     public static class ScoreCalculatorInterop
     {
-        private const string DllName = "ScoreCalculator";
+        // 네이티브 라이브러리 초기화
+#if UNITY_IL2CPP && !UNITY_EDITOR
+          private const string DLL_NAME = "libScoreCalculator";  // Linux는 'lib' 접두사 필요
 
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern TileScoreDataArray GetTenpaiTileScoreData(HandData hand, WinningConditionData condition);
+         [DllImport(DLL_NAME, EntryPoint = "DataTransfer_ScoreCalculatorInterop_InitLibrary")]
+        public static extern void InitLibrary();
 
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(DLL_NAME, EntryPoint = "DataTransfer_ScoreCalculatorInterop_GetHuYakuScoreData")]
         public static extern YakuScoreDataArray GetHuYakuScoreData(HandData hand, WinningConditionData condition);
 
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(DLL_NAME, EntryPoint = "DataTransfer_ScoreCalculatorInterop_GetTenpaiTileScoreData")]
+        public static extern TileScoreDataArray GetTenpaiTileScoreData(HandData hand, WinningConditionData condition);
+
+        [DllImport(DLL_NAME, EntryPoint = "DataTransfer_ScoreCalculatorInterop_FreeTileScoreData")]
         public static extern void FreeTileScoreData(IntPtr data);
 
-        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(DLL_NAME, EntryPoint = "DataTransfer_ScoreCalculatorInterop_FreeYakuScoreData")]
         public static extern void FreeYakuScoreData(IntPtr data);
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Initialize()
+        {
+            Debug.Log("🔧 [DEBUG] InitLibrary() 호출");
+            InitLibrary();  // 네이티브 라이브러리 초기화
+        }
+#else
+        // IL2CPP가 아닐 때 에러 방지용 Dummy 함수
+        public static void InitLibrary()
+        {
+            Debug.LogWarning("InitLibrary is only available in IL2CPP builds.");
+        }
+
+        public static TileScoreDataArray GetTenpaiTileScoreData(HandData hand, WinningConditionData condition)
+        {
+            Debug.LogWarning("GetTenpaiTileScoreData is only available in IL2CPP builds.");
+            return new TileScoreDataArray();
+        }
+
+        public static YakuScoreDataArray GetHuYakuScoreData(HandData hand, WinningConditionData condition)
+        {
+            Debug.LogWarning("GetHuYakuScoreData is only available in IL2CPP builds.");
+            return new YakuScoreDataArray();
+        }
+
+        public static void FreeTileScoreData(IntPtr data)
+        {
+            Debug.LogWarning("FreeTileScoreData is only available in IL2CPP builds.");
+        }
+
+        public static void FreeYakuScoreData(IntPtr data)
+        {
+            Debug.LogWarning("FreeYakuScoreData is only available in IL2CPP builds.");
+        }
+#endif
+
+        // 텐파이 점수 데이터 변환
         public static List<TileScoreData> GetTenpaiTileScores(HandData handData, WinningConditionData conditionData)
         {
-            // DLL 함수 호출
             TileScoreDataArray resultArray = GetTenpaiTileScoreData(handData, conditionData);
 
             if (resultArray.Count <= 0 || resultArray.Data == IntPtr.Zero)
@@ -322,9 +365,7 @@ namespace DataTransfer
                 return new List<TileScoreData>();
             }
 
-            // 결과를 배열로 변환
             TileScoreData[] tileScores = new TileScoreData[resultArray.Count];
-
             IntPtr currentPtr = resultArray.Data;
 
             for (int i = 0; i < resultArray.Count; i++)
@@ -333,16 +374,14 @@ namespace DataTransfer
                 currentPtr = IntPtr.Add(currentPtr, Marshal.SizeOf(typeof(TileScoreData)));
             }
 
-            // 메모리 해제
             FreeTileScoreData(resultArray.Data);
 
             return new List<TileScoreData>(tileScores);
         }
 
-
+        // 후 역 점수 데이터 변환
         public static List<YakuScoreData> GetHuYakuScores(HandData handData, WinningConditionData conditionData)
         {
-            // DLL 함수 호출
             YakuScoreDataArray resultArray = GetHuYakuScoreData(handData, conditionData);
 
             if (resultArray.Count <= 0 || resultArray.Data == IntPtr.Zero)
@@ -350,9 +389,7 @@ namespace DataTransfer
                 return new List<YakuScoreData>();
             }
 
-            // 결과를 배열로 변환
             YakuScoreData[] yakuScores = new YakuScoreData[resultArray.Count];
-
             IntPtr currentPtr = resultArray.Data;
 
             for (int i = 0; i < resultArray.Count; i++)
@@ -361,7 +398,6 @@ namespace DataTransfer
                 currentPtr = IntPtr.Add(currentPtr, Marshal.SizeOf(typeof(YakuScoreData)));
             }
 
-            // 메모리 해제
             FreeYakuScoreData(resultArray.Data);
 
             return new List<YakuScoreData>(yakuScores);

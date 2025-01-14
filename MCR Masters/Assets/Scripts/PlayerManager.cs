@@ -4,22 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using Game.Shared;
 using System.Linq;
-using Mirror.Examples.MultipleMatch;
 using System.Collections;
 using System;
-using static Unity.Burst.Intrinsics.X86.Avx;
-using System.Threading.Tasks;
 using DataTransfer;
-using Mirror.BouncyCastle.Utilities.Collections;
 using TMPro;
-using Unity.VisualScripting;
-using System.Xml;
-using Mirror.BouncyCastle.Security.Certificates;
-using UnityEngine.Tilemaps;
-using System.Runtime.InteropServices;
-using UnityEngine.WSA;
-using UnityEditor.Experimental.GraphView;
-using TreeEditor;
 
 public class PlayerManager : NetworkBehaviour
 {

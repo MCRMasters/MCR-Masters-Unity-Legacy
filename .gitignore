@@ -87,3 +87,6 @@ MCR Masters_clone_*/
 # Ignore VS config file
 MCR Masters/.editorconfig
 MCR Masters/.vsconfig
+
+# Ignore Build files
+MCR Masters/Build

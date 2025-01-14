@@ -12,7 +12,7 @@ public class CustomNetworkRoomManager : NetworkRoomManager
     public int RequiredPlayerCount = 4; // 플레이어 수를 조정 가능한 변수로 설정
 
     // 리눅스 서버 빌드 테스트시 활성화
-    /*
+    
     public override void Start()
     {
         base.Start();
@@ -22,13 +22,15 @@ public class CustomNetworkRoomManager : NetworkRoomManager
             networkAddress = "0.0.0.0"; // 모든 네트워크 인터페이스에서 연결 대기
             StartServer();
             Debug.Log("Server started in headless mode.");
+            Screen.SetResolution(1920, 1080, false);
         }
         else // 클라이언트 실행 (HUD 사용)
         {
+            networkAddress = "192.168.115.189";
             Debug.Log("Client mode. Use the HUD to enter IP and connect.");
         }
     }
-    */
+    
 
     private List<PlayerManager> playerManagers = new List<PlayerManager>();
 

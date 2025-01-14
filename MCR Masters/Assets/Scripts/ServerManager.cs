@@ -7,8 +7,6 @@ using Mirror;
 using Game.Shared;
 using System.Collections;
 using DataTransfer;
-using Mirror.BouncyCastle.Security;
-using Unity.VisualScripting;
 
 
 
@@ -27,7 +25,7 @@ public class ServerManager : NetworkBehaviour
     private WinningCondition winningCondition;
     //
 
-    private const int MINIMUM_HU_SCORE = 1;
+    private const int MINIMUM_HU_SCORE = 8;
     private const int TotalTiles = 144;
     private int tileDrawIndexLeft = 0;
     private int tileDrawIndexRight = TotalTiles - 1;
@@ -45,6 +43,19 @@ public class ServerManager : NetworkBehaviour
 
     private int popupResponses = 0; // 클라이언트의 확인 응답 수
     private int ActionTurnId = 0;
+
+    void Awake()
+    {
+#if UNITY_IL2CPP && !UNITY_EDITOR
+    UnityEngine.Debug.Log("✅ IL2CPP 빌드에서 실행 중입니다.");
+#else
+        UnityEngine.Debug.Log("❌ IL2CPP가 아닌 Mono 또는 에디터 모드에서 실행 중입니다.");
+#endif
+
+        Debug.Log("[DEBUG] ServerManager Awake - Initializing Native Library...");
+        ScoreCalculatorInterop.InitLibrary();
+    }
+
 
     public int GetCurrentPlayerWindIndex()
     {
@@ -1437,8 +1448,8 @@ $"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority:
             kawaTilesList[i] = new();
             visibleTileCounts[i] = 0;
         }
-        for (int tileNum = 0; tileNum < 4; tileNum++)
-        //for (int tileNum = 0; tileNum < 34; tileNum++)
+        //for (int tileNum = 0; tileNum < 4; tileNum++)
+        for (int tileNum = 0; tileNum < 34; tileNum++)
         {
             for (int i = 0; i < 4; i++)
             {
