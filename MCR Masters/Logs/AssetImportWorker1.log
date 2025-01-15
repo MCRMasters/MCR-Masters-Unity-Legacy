@@ -1,0 +1,301 @@
+Unity Editor version:    6000.0.32f1 (b2e806cf271c)
+Branch:                  6000.0/staging
+Build type:              Release
+Batch mode:              YES
+macOS version:           Version 13.4 (Build 22F66)
+Darwin version:          22.5.0
+Architecture:            arm64
+Running under Rosetta:   NO
+Available memory:        16384 MB
+Using pre-set license
+Pro License: YES
+
+COMMAND LINE ARGUMENTS:
+/Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/MacOS/Unity
+-adb2
+-batchMode
+-noUpm
+-name
+AssetImportWorker1
+-projectPath
+/Users/rhohyunwoo/Desktop/MCR-Masters/MCR Masters
+-logFile
+Logs/AssetImportWorker1.log
+-srvPort
+62890
+-job-worker-count
+3
+-background-job-worker-count
+8
+-gc-helper-count
+1
+Successfully changed project path to: /Users/rhohyunwoo/Desktop/MCR-Masters/MCR Masters
+/Users/rhohyunwoo/Desktop/MCR-Masters/MCR Masters
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [8445402624]  Target information:
+
+Player connection [8445402624]  * "[IP] 172.30.1.14 [Port] 0 [Flags] 2 [Guid] 2700749842 [EditorId] 2700749842 [Version] 1048832 [Id] OSXEditor(0,rhos-MacBook-Air.local) [Debug] 1 [PackageName] OSXEditor [ProjectName] Editor" 
+
+Player connection [8445402624] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [8445402624] Host joined alternative multi-casting on [225.0.0.222:34997]...
+JobSystem: Creating JobQueue using job-worker-count value 3
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Refreshing native plugins compatible for Editor in 1.98 ms, found 3 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 6000.0.32f1 (b2e806cf271c)
+[Subsystems] Discovering subsystems at path /Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path /Users/rhohyunwoo/Desktop/MCR-Masters/MCR Masters/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+ preferred device: Apple M1 (high power)
+Metal devices available: 1
+0: Apple M1 (high power)
+Using device Apple M1 (high power)
+Initializing Metal device caps: Apple M1
+Initialize mono
+Mono path[0] = '/Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/Managed'
+Mono path[1] = '/Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/MonoBleedingEdge/lib/mono/unityjit-macos'
+Mono config path = '/Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56165
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: /Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+Registered in 0.002061 seconds.
+- Loaded All Assemblies, in  0.314 seconds
+Native extension for OSXStandalone target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.302 seconds
+Domain Reload Profiling: 616ms
+	BeginReloadAssembly (106ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (1ms)
+	RebuildCommonClasses (29ms)
+	RebuildNativeTypeToScriptingClass (10ms)
+	initialDomainReloadingComplete (38ms)
+	LoadAllAssembliesAndSetupDomain (130ms)
+		LoadAssemblies (106ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (127ms)
+			TypeCache.Refresh (126ms)
+				TypeCache.ScanAssembly (114ms)
+			BuildScriptInfoCaches (0ms)
+			ResolveRequiredComponents (0ms)
+	FinalizeReload (303ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (262ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (37ms)
+			SetLoadedEditorAssemblies (4ms)
+			BeforeProcessingInitializeOnLoad (47ms)
+			ProcessInitializeOnLoadAttributes (111ms)
+			ProcessInitializeOnLoadMethodAttributes (63ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+========================================================================
+Worker process is ready to serve import requests
+Import Worker Mode flag is 0x00
+Begin MonoManager ReloadAssembly
+Symbol file LoadedFromMemory is not a mono symbol file
+- Loaded All Assemblies, in  0.749 seconds
+Refreshing native plugins compatible for Editor in 0.80 ms, found 3 plugins.
+Native extension for OSXStandalone target not found
+Refreshing native plugins compatible for Editor in 0.93 ms, found 3 plugins.
+Mirror | mirror-networking.com | discord.gg/N9QVxbM
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.686 seconds
+Domain Reload Profiling: 1433ms
+	BeginReloadAssembly (101ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (4ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (33ms)
+	RebuildCommonClasses (35ms)
+	RebuildNativeTypeToScriptingClass (12ms)
+	initialDomainReloadingComplete (19ms)
+	LoadAllAssembliesAndSetupDomain (580ms)
+		LoadAssemblies (339ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (281ms)
+			TypeCache.Refresh (210ms)
+				TypeCache.ScanAssembly (187ms)
+			BuildScriptInfoCaches (56ms)
+			ResolveRequiredComponents (12ms)
+	FinalizeReload (686ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (573ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (2ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (94ms)
+			ProcessInitializeOnLoadAttributes (375ms)
+			ProcessInitializeOnLoadMethodAttributes (97ms)
+			AfterProcessingInitializeOnLoad (1ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (2ms)
+Launching external process: /Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/Tools/UnityShaderCompiler
+Launched and connected shader compiler UnityShaderCompiler after 0.07 seconds
+Refreshing native plugins compatible for Editor in 0.70 ms, found 3 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Unloading 223 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 7135 unused Assets / (3.4 MB). Loaded Objects now: 7819.
+Memory consumption went from 183.0 MB to 179.6 MB.
+Total: 7.011334 ms (FindLiveObjects: 0.685542 ms CreateObjectMapping: 0.298042 ms MarkObjects: 4.435083 ms  DeleteObjects: 1.591750 ms)
+
+========================================================================
+Received Import Request.
+  Time since last request: 94178.744336 seconds.
+  path: Assets/InputSystem_Actions.inputactions
+  artifactKey: Guid(2bcd2660ca9b64942af0de543d8d7100) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/InputSystem_Actions.inputactions using Guid(2bcd2660ca9b64942af0de543d8d7100) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '1526cf67c1d1aaa9a72597cdbc7bb0b0') in 0.019128042 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 19
+
+========================================================================
+Received Import Request.
+  Time since last request: 179.563559 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/333.blend
+  artifactKey: Guid(a9fd5812da98d45988df3626dda1dd87) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/333.blend using Guid(a9fd5812da98d45988df3626dda1dd87) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '7499feefb8c766d6963ee8a38488442f') in 1.15669175 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 597
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000113 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/Miyu_Akey_Rigging.blend
+  artifactKey: Guid(ea773470be0684076bd21e3cdaa5cb6b) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/Miyu_Akey_Rigging.blend using Guid(ea773470be0684076bd21e3cdaa5cb6b) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'b966ee37b588692e42714ddd428c8675') in 0.230984709 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 589
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000130 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/plz.png
+  artifactKey: Guid(e46adfa8737584d68abac6de6ecbfea2) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/plz.png using Guid(e46adfa8737584d68abac6de6ecbfea2) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '7d424381fca922e308a530a95c4294a6') in 0.02486775 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000200 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/outer_cloth.123.png
+  artifactKey: Guid(afb273ac21e5f4bc6821b23e45b2809d) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/outer_cloth.123.png using Guid(afb273ac21e5f4bc6821b23e45b2809d) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'ffd9e7591a00b877cda72e6fa76ed982') in 0.024145625 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 7
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000091 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/gogo.png
+  artifactKey: Guid(d86599f65f44c4f5e9af8e371bd6c4df) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/gogo.png using Guid(d86599f65f44c4f5e9af8e371bd6c4df) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'e7885a81f13b4b91a2b20a77020ff3a9') in 0.010408875 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000066 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/hphp000.png
+  artifactKey: Guid(7bfea4c24ad1c436c916b816d1a6faae) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/hphp000.png using Guid(7bfea4c24ad1c436c916b816d1a6faae) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '980c494a2db50e6192142a10b33b277c') in 0.016024042 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 5
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000044 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/21111123.blend
+  artifactKey: Guid(7557d5288ef654307930e40b8b9b10ab) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/21111123.blend using Guid(7557d5288ef654307930e40b8b9b10ab) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '1b9ff20b881b72e06dbce08ecda01d20') in 0.023951541 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 38
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000051 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/hheyeehy.fbx
+  artifactKey: Guid(7beccbc70ced147c99d9ef14e58c78e7) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/hheyeehy.fbx using Guid(7beccbc70ced147c99d9ef14e58c78e7) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '33adcd13ee78bb7e6220b945505d93de') in 0.033602083 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 10
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000208 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/miu.png
+  artifactKey: Guid(957f820a51796409ba8ebd57bbe6981c) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/miu.png using Guid(957f820a51796409ba8ebd57bbe6981c) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'f3f62b209c914d87fba48726e4e8b236') in 0.010423625 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 59.826891 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/textures/Cloth.psd
+  artifactKey: Guid(16e94da531e354659b16cc52c4cd75f3) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/textures/Cloth.psd using Guid(16e94da531e354659b16cc52c4cd75f3) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'cd9ef39203bd2a99ca1dd8104d9cff65') in 0.031240833 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000181 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/textures/Misc.psd
+  artifactKey: Guid(181e6bafa220544feaeb00a64cc1c279) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/textures/Misc.psd using Guid(181e6bafa220544feaeb00a64cc1c279) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '45ee3fe43acb2e9615af1fd81633a0c6') in 0.012616667 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000058 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/textures/Weapon.psd
+  artifactKey: Guid(d8d20293e6bbc4e40aa872c9674f44f6) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/textures/Weapon.psd using Guid(d8d20293e6bbc4e40aa872c9674f44f6) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'c25a2fffe66986c12adf5c8254ec2258') in 0.01132225 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+Editor requested this worker to shutdown with reason: Scaling down because of idle timeout
+AssetImportWorkerClient::OnTransportError - code=2 error=End of file
+AssetImportWorker is now disconnected from the server
+Process exiting
