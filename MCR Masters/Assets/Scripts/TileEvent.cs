@@ -17,15 +17,22 @@ public class TileEvent : MonoBehaviour
     private bool isDraggable = true;
     private bool isHoveringEnd = false;
     private GameObject startParent;
+    private Vector2 defaultOffset;
     private Vector2 offset; // 마우스 클릭 위치와 중심점의 차이
     private Vector3 startPosition;
     private int siblingIndex = -1;
 
     private float discardThresholdY;
 
+    RectTransform rectTransform;
+    Canvas canvas;
+    float hoverOffset;
+
     public void Awake()
     {
         Debug.Log("Awake: Initializing TileEvent.");
+        hoverOffset = 10 * Screen.width / 1920f;
+
         Canvas = GameObject.Find("Main Canvas");
         PlayerHaipai = GameObject.Find("PlayerHaipai");
 
@@ -57,6 +64,12 @@ public class TileEvent : MonoBehaviour
         Debug.Log($"Discard threshold set to {discardThresholdY} (25% of screen height).");
 
         AddEventListeners();
+    }
+
+    void Start()
+    {
+        rectTransform = GetComponent<RectTransform>();
+        canvas = GameObject.Find("Main Canvas").GetComponent<Canvas>();
     }
 
     private void AddEventListeners()
@@ -120,7 +133,6 @@ public class TileEvent : MonoBehaviour
         }));
     }
 
-
     public void StartDrag()
     {
         if (!isDraggable) return;
@@ -137,12 +149,24 @@ public class TileEvent : MonoBehaviour
         siblingIndex = transform.GetSiblingIndex();
         startPosition = transform.position;
 
-        // 중심점 위치와 마우스 클릭 위치의 차이를 offset으로 설정
-        Vector2 centerPosition = RectTransformUtility.WorldToScreenPoint(null, transform.position);
-        offset = centerPosition - (Vector2)Input.mousePosition;
+        // 마우스 위치를 부모의 로컬 좌표계로 변환
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            rectTransform.parent as RectTransform,  // 부모의 RectTransform 기준으로 변환
+            Input.mousePosition,
+            canvas.worldCamera,
+            out Vector2 localMousePosition
+        );
+        // 오브젝트의 width, height 구하기
+        float width = rectTransform.rect.width;
+        float height = rectTransform.rect.height;
+
+        // 오프셋 계산 (width만큼 오른쪽, height/2만큼 위쪽으로 조정)
+        offset = (Vector2)rectTransform.localPosition - localMousePosition
+                 + new Vector2(width / 4 * 5, height / 2 + hoverOffset);
 
         Debug.Log($"StartDrag: Calculated offset = {offset}");
     }
+
 
     public void EndDrag()
     {
@@ -204,6 +228,7 @@ public class TileEvent : MonoBehaviour
         //transform.SetParent(Canvas.transform, true);
         transform.SetParent(startParent.transform, false);
         transform.SetSiblingIndex(siblingIndex);
+        transform.position = startPosition;
         TileGrid tileGrid = startParent.GetComponent<TileGrid>();
         tileGrid.UpdateLayoutByIndex();
     }
@@ -221,7 +246,7 @@ public class TileEvent : MonoBehaviour
         startParent = transform.parent.gameObject;
         siblingIndex = transform.GetSiblingIndex();
         startPosition = transform.position;
-        transform.position = new Vector3(startPosition.x, startPosition.y + 10 * Screen.width / 1920f, startPosition.z);
+        transform.position = new Vector3(startPosition.x, startPosition.y + hoverOffset, startPosition.z);
     }
 
     public void OnHoverExit()
@@ -300,13 +325,21 @@ public class TileEvent : MonoBehaviour
     }
 
 
+
     void Update()
     {
         if (isDragging)
         {
-            Vector2 newPosition = (Vector2)Input.mousePosition + offset;
-            transform.position = newPosition;
-            //Debug.Log($"Update: Dragging {gameObject.name} to position {transform.position}");
+            // 마우스 위치를 부모의 로컬 좌표계로 변환
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                rectTransform.parent as RectTransform,
+                Input.mousePosition,
+                canvas.worldCamera,
+                out Vector2 localPoint
+            );
+
+            // 오프셋을 반영한 위치로 오브젝트 이동
+            rectTransform.localPosition = localPoint + offset;
         }
     }
 }

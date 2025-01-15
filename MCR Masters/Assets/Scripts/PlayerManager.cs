@@ -440,7 +440,7 @@ public class PlayerManager : NetworkBehaviour
             return;
         }
 
-        tileGridKawa.DestoryLastTile();
+        tileGridKawa.DestoryLastKawaTile();
 
         // 그룹 생성 및 부모 설정
         GameObject tileGroup = new GameObject("TileGroup", typeof(RectTransform));
@@ -666,7 +666,7 @@ public class PlayerManager : NetworkBehaviour
             return;
         }
 
-        tileGridKawa.DestoryLastTile();
+        tileGridKawa.DestoryLastKawaTile();
 
         // 그룹 생성 및 부모 설정
         GameObject tileGroup = new GameObject("TileGroup", typeof(RectTransform));
@@ -865,7 +865,7 @@ public class PlayerManager : NetworkBehaviour
             Debug.LogError("TileGrid is not in KawaField.");
             return;
         }
-        tileGridKawa.DestoryLastTile();
+        tileGridKawa.DestoryLastKawaTile();
 
         // 그룹 생성 및 부모 설정
         GameObject tileGroup = new GameObject("TileGroup", typeof(RectTransform));

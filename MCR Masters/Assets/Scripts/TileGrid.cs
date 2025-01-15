@@ -304,6 +304,7 @@ public class TileGrid : MonoBehaviour
         }
     }
 
+    bool new_tsumo_flag = false;
     private IEnumerator ShowTedashiCoroutine()
     {
         // 1. Remove null values from indexToChild and update the list
@@ -321,22 +322,27 @@ public class TileGrid : MonoBehaviour
 
         // 3. Hide it
         randomObject.SetActive(false);
-        
+        new_tsumo_flag = false;
         // 4. Wait 1 second
         yield return new WaitForSeconds(1f); //Destroy(randomObject ); 1초 기다리는동안 Destroy 당함
-        if (!randomObject)
+        if (randomObject == null)
         {
             yield break;
         }
-        // 5. Destroy LastTsumoTileObject if it exists
-        if (LastTsumoTileObject)
-        {
-            Destroy(LastTsumoTileObject);
-            LastTsumoTileObject = null;
-        }
-
-        // 6. Show it
+        // 5. Show it
         randomObject.SetActive(true);
+        if (new_tsumo_flag)
+        {
+            yield break;
+        }
+        indexToChild = indexToChild.Where(obj => obj != null && obj.activeSelf == true).ToList();
+        DestoryLastTile();
+        //if (LastTsumoTileObject)
+        //{
+        //    Destroy(LastTsumoTileObject);
+        //    LastTsumoTileObject = null;
+        //}
+        
     }
 
 
@@ -345,11 +351,17 @@ public class TileGrid : MonoBehaviour
     {
         if (lastTsumoTileObject == null)
         {
-            Debug.LogError("remove last tsumo tile.");
-            if (LastTsumoTileObject)
-                Destroy(LastTsumoTileObject);
-            LastTsumoTileObject = null;
+            //Debug.LogError("remove last tsumo tile.");
+            //if (LastTsumoTileObject)
+            //    Destroy(LastTsumoTileObject);
+            //LastTsumoTileObject = null;
             return;
+        }
+        new_tsumo_flag = true;
+        if (LastTsumoTileObject != null && lastTsumoTileObject != LastTsumoTileObject)
+        {
+            Destroy(LastTsumoTileObject);
+            LastTsumoTileObject = null;
         }
 
         LastTsumoTileObject = lastTsumoTileObject;
@@ -413,6 +425,19 @@ public class TileGrid : MonoBehaviour
                     DiscardSelectedTile(indexToChild[i]);
                     return;
                 }
+            }
+        }
+    }
+
+
+    public void DestoryLastKawaTile()
+    {
+        if (indexToChild.Count > 0)
+        {
+            if (indexToChild[indexToChild.Count - 1] != null)
+            {
+                Destroy(indexToChild[indexToChild.Count - 1]);
+                indexToChild.RemoveAt(indexToChild.Count - 1);
             }
         }
     }
