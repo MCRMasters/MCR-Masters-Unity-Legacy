@@ -336,6 +336,7 @@ public class TileGrid : MonoBehaviour
             yield break;
         }
         indexToChild = indexToChild.Where(obj => obj != null && obj.activeSelf == true).ToList();
+        indexToChild.Add(LastTsumoTileObject);
         DestoryLastTile();
         //if (LastTsumoTileObject)
         //{

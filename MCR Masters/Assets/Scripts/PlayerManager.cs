@@ -86,6 +86,8 @@ public class PlayerManager : NetworkBehaviour
     private GameObject ponButton;
     private GameObject kanButton;
 
+    public GameObject[] discardHandPrefabs;  // Animator가 포함된 Prefab 배열
+    private Animator animator;
 
     private void DestoryAllChildrenOfFuroFields()
     {
@@ -1657,6 +1659,11 @@ public class PlayerManager : NetworkBehaviour
         
         DisableFlowerFields();
         GameStatusUI = GameObject.Find("GameStatusUI");
+        discardHandPrefabs[0] = GameObject.Find("201");
+        discardHandPrefabs[1] = GameObject.Find("301");
+        discardHandPrefabs[2] = GameObject.Find("401");
+        discardHandPrefabs[3] = GameObject.Find("101");
+        //animator = GetComponent<Animator>();
 
         DeleteButtons();
     }
@@ -2281,24 +2288,30 @@ public class PlayerManager : NetworkBehaviour
         {
             decisionMade = true;
             kawaPrefab = PlayerKawa;
+            animator = discardHandPrefabs[3].GetComponent<Animator>();
+            animator.SetTrigger("101AniTrigger");
         }
         else
         {
             int relativeIndex = GetRelativeIndex(playerIndex);
             Debug.Log($"Get relative index {relativeIndex}");
+            animator = discardHandPrefabs[relativeIndex].GetComponent<Animator>();
             switch (relativeIndex)
             {
                 case 0:
                     kawaPrefab = EnemyKawaShimo;
                     haipaiPrefab = EnemyHaipaiShimo;
+                    animator.SetTrigger("201AniTrigger");
                     break;
                 case 1:
                     kawaPrefab = EnemyKawaToi;
                     haipaiPrefab = EnemyHaipaiToi;
+                    animator.SetTrigger("301AniTrigger");
                     break;
                 case 2:
                     kawaPrefab = EnemyKawaKami;
                     haipaiPrefab = EnemyHaipaiKami;
+                    animator.SetTrigger("401AniTrigger");
                     break;
                 default:
                     Debug.LogError($"Invalid relative index: {relativeIndex}");

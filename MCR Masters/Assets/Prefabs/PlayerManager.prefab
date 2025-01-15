@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2879238761198762007}
   - component: {fileID: 2657592960378751275}
   - component: {fileID: 4820288364337415408}
+  - component: {fileID: -6510084357998897132}
   m_Layer: 0
   m_Name: PlayerManager
   m_TagString: Untagged
@@ -120,6 +121,14 @@ MonoBehaviour:
   EnemyKawaKami: {fileID: 0}
   EnemyKawaShimo: {fileID: 0}
   EnemyKawaList: []
+  EnemyFuroFieldShimo: {fileID: 0}
+  EnemyFuroFieldToi: {fileID: 0}
+  EnemyFuroFieldKami: {fileID: 0}
+  PlayerFuroField: {fileID: 0}
+  PlayerFlowerField: {fileID: 0}
+  EnemyFlowerFieldShimo: {fileID: 0}
+  EnemyFlowerFieldToi: {fileID: 0}
+  EnemyFlowerFieldKami: {fileID: 0}
   GameStatusUI: {fileID: 0}
   huButtonPrefab: {fileID: 3567753911903963182, guid: 5dd54aabafc25de4dbdcab06ac2fb5cd, type: 3}
   skipButtonPrefab: {fileID: 1543944889268478647, guid: 9f5d46cd96818504eaf6526c7a214779, type: 3}
@@ -128,6 +137,11 @@ MonoBehaviour:
   ponButtonPrefab: {fileID: 844451755049287818, guid: 0abca03690fa661438d6e6bf05e45cc7, type: 3}
   kanButtonPrefab: {fileID: 5134384082880499645, guid: 953c175a46049b34db11c40c355a5766, type: 3}
   popupPrefab: {fileID: 2430015050346289157, guid: d674a6d63d6c4994b87997f7763c4908, type: 3}
+  discardHandPrefabs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   backButtonPrefab: {fileID: 1543944889268478647, guid: f2de5a456fe48ad4ca1cb758eebd38aa, type: 3}
 --- !u!114 &4820288364337415408
 MonoBehaviour:
@@ -162,3 +176,25 @@ MonoBehaviour:
   rotationSensitivity: 0.01
   positionPrecision: 0.01
   scalePrecision: 0.01
+--- !u!95 &-6510084357998897132
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2382101586324622244}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 4f792162dcb9a0c459fecce1e6e63ec7, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

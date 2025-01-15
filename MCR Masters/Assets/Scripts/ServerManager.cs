@@ -1352,10 +1352,10 @@ $"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority:
         ShuffleTiles();
 
 
-        //DealTilesToPlayers();
+        DealTilesToPlayers();
 
         // Warning: Test Function!!
-        DealTilesToPlayersTest();
+        //DealTilesToPlayersTest();
         // 
         Debug.Log("Initialization of players completed. Proceeding to next turn.");
         ProceedNextTurn(3);
