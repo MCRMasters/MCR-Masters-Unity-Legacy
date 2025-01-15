@@ -1,0 +1,521 @@
+Unity Editor version:    6000.0.32f1 (b2e806cf271c)
+Branch:                  6000.0/staging
+Build type:              Release
+Batch mode:              YES
+macOS version:           Version 13.4 (Build 22F66)
+Darwin version:          22.5.0
+Architecture:            arm64
+Running under Rosetta:   NO
+Available memory:        16384 MB
+Using pre-set license
+Pro License: YES
+
+COMMAND LINE ARGUMENTS:
+/Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/MacOS/Unity
+-adb2
+-batchMode
+-noUpm
+-name
+AssetImportWorker2
+-projectPath
+/Users/rhohyunwoo/Desktop/MCR-Masters/MCR Masters
+-logFile
+Logs/AssetImportWorker2.log
+-srvPort
+62890
+-job-worker-count
+3
+-background-job-worker-count
+8
+-gc-helper-count
+1
+Successfully changed project path to: /Users/rhohyunwoo/Desktop/MCR-Masters/MCR Masters
+/Users/rhohyunwoo/Desktop/MCR-Masters/MCR Masters
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [8445402624]  Target information:
+
+Player connection [8445402624]  * "[IP] 172.30.1.14 [Port] 0 [Flags] 2 [Guid] 572917967 [EditorId] 572917967 [Version] 1048832 [Id] OSXEditor(0,rhos-MacBook-Air.local) [Debug] 1 [PackageName] OSXEditor [ProjectName] Editor" 
+
+Player connection [8445402624] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [8445402624] Host joined alternative multi-casting on [225.0.0.222:34997]...
+JobSystem: Creating JobQueue using job-worker-count value 3
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Refreshing native plugins compatible for Editor in 4.75 ms, found 3 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 6000.0.32f1 (b2e806cf271c)
+[Subsystems] Discovering subsystems at path /Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path /Users/rhohyunwoo/Desktop/MCR-Masters/MCR Masters/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+ preferred device: Apple M1 (high power)
+Metal devices available: 1
+0: Apple M1 (high power)
+Using device Apple M1 (high power)
+Initializing Metal device caps: Apple M1
+Initialize mono
+Mono path[0] = '/Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/Managed'
+Mono path[1] = '/Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/MonoBleedingEdge/lib/mono/unityjit-macos'
+Mono config path = '/Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56333
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: /Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+Registered in 0.002472 seconds.
+- Loaded All Assemblies, in  0.336 seconds
+Native extension for OSXStandalone target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.428 seconds
+Domain Reload Profiling: 765ms
+	BeginReloadAssembly (113ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (1ms)
+	RebuildCommonClasses (32ms)
+	RebuildNativeTypeToScriptingClass (11ms)
+	initialDomainReloadingComplete (39ms)
+	LoadAllAssembliesAndSetupDomain (142ms)
+		LoadAssemblies (112ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (139ms)
+			TypeCache.Refresh (138ms)
+				TypeCache.ScanAssembly (123ms)
+			BuildScriptInfoCaches (0ms)
+			ResolveRequiredComponents (0ms)
+	FinalizeReload (429ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (367ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (50ms)
+			SetLoadedEditorAssemblies (5ms)
+			BeforeProcessingInitializeOnLoad (72ms)
+			ProcessInitializeOnLoadAttributes (146ms)
+			ProcessInitializeOnLoadMethodAttributes (94ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+========================================================================
+Worker process is ready to serve import requests
+Import Worker Mode flag is 0x00
+Begin MonoManager ReloadAssembly
+Symbol file LoadedFromMemory is not a mono symbol file
+- Loaded All Assemblies, in  0.667 seconds
+Refreshing native plugins compatible for Editor in 0.63 ms, found 3 plugins.
+Native extension for OSXStandalone target not found
+Refreshing native plugins compatible for Editor in 0.76 ms, found 3 plugins.
+Mirror | mirror-networking.com | discord.gg/N9QVxbM
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.629 seconds
+Domain Reload Profiling: 1295ms
+	BeginReloadAssembly (91ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (4ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (29ms)
+	RebuildCommonClasses (29ms)
+	RebuildNativeTypeToScriptingClass (10ms)
+	initialDomainReloadingComplete (15ms)
+	LoadAllAssembliesAndSetupDomain (521ms)
+		LoadAssemblies (316ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (243ms)
+			TypeCache.Refresh (181ms)
+				TypeCache.ScanAssembly (161ms)
+			BuildScriptInfoCaches (49ms)
+			ResolveRequiredComponents (11ms)
+	FinalizeReload (629ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (526ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (2ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (87ms)
+			ProcessInitializeOnLoadAttributes (329ms)
+			ProcessInitializeOnLoadMethodAttributes (103ms)
+			AfterProcessingInitializeOnLoad (2ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (5ms)
+Launching external process: /Applications/Unity/Hub/Editor/6000.0.32f1/Unity.app/Contents/Tools/UnityShaderCompiler
+Launched and connected shader compiler UnityShaderCompiler after 0.06 seconds
+Refreshing native plugins compatible for Editor in 0.79 ms, found 3 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Unloading 223 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 7135 unused Assets / (3.5 MB). Loaded Objects now: 7820.
+Memory consumption went from 183.1 MB to 179.5 MB.
+Total: 7.656625 ms (FindLiveObjects: 0.761000 ms CreateObjectMapping: 0.268375 ms MarkObjects: 4.699416 ms  DeleteObjects: 1.926583 ms)
+
+========================================================================
+Received Import Request.
+  Time since last request: 94419.846167 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/textures
+  artifactKey: Guid(5261d8c5978fa441d86f5c6c4b09b44e) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/textures using Guid(5261d8c5978fa441d86f5c6c4b09b44e) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '08f5d61394200b69596ca92df14c3bd3') in 0.004338041 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.004524 seconds.
+  path: Assets/majong/hands/blue-archivekasumizawa-miyu/source/textures/Character_Body.psd
+  artifactKey: Guid(6b9b3494fd62d453ea906d8600bce43a) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/blue-archivekasumizawa-miyu/source/textures/Character_Body.psd using Guid(6b9b3494fd62d453ea906d8600bce43a) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '031107b2629049b04e326d6269a947a3') in 0.110510333 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 254.102757 seconds.
+  path: Assets/majong/asset
+  artifactKey: Guid(2798366f7d518430e97f80ec72139089) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/asset using Guid(2798366f7d518430e97f80ec72139089) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '17bf4cc50b2c12e1b3e5a05244cb3896') in 0.001372792 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
+========================================================================
+Received Import Request.
+  Time since last request: 3.754470 seconds.
+  path: Assets/majong/asset/14.png
+  artifactKey: Guid(e1f931eb168cae44f8654afda4d18a93) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/asset/14.png using Guid(e1f931eb168cae44f8654afda4d18a93) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '9a71c6fe391492115d43690684412f7b') in 0.022919458 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000099 seconds.
+  path: Assets/majong/asset/joinroom.png
+  artifactKey: Guid(b2673a69ad400449d9eb2118a096f453) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/asset/joinroom.png using Guid(b2673a69ad400449d9eb2118a096f453) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '398a44b04e260a1173542f7244d605ff') in 0.010559041 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 20.478789 seconds.
+  path: Assets/majong/back/backTile.png
+  artifactKey: Guid(d25af50c211a49c459846a991ff1f20c) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/back/backTile.png using Guid(d25af50c211a49c459846a991ff1f20c) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '79cf7d6f34e09e91e596aef9cf311f91') in 0.007346834 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.443952 seconds.
+  path: Assets/majong/background/lobby_background.png
+  artifactKey: Guid(34b929cf3283c594aa5500c5cd80aebd) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/background/lobby_background.png using Guid(34b929cf3283c594aa5500c5cd80aebd) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '506cc10eb41746576e447f0f0978e082') in 0.01418375 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.751879 seconds.
+  path: Assets/majong/etcTiles/0f.png
+  artifactKey: Guid(4652c4c2d374a1f459539eb1df11543d) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/etcTiles/0f.png using Guid(4652c4c2d374a1f459539eb1df11543d) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'f3dab3dbd79326bf7df85db670abe6a8') in 0.007691375 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 13.865850 seconds.
+  path: Assets/majong/hands/21111123.blend
+  artifactKey: Guid(9fe71f51c62324cb68f065f8b6b48dde) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/21111123.blend using Guid(9fe71f51c62324cb68f065f8b6b48dde) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '9b3d598cf4e3f9aa9c1299131f270463') in 0.533511625 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 38
+
+========================================================================
+Received Import Request.
+  Time since last request: 65.927543 seconds.
+  path: Assets/majong/hands/Cloth.psd
+  artifactKey: Guid(d8c2816d074e4481abfc6c64ececf68a) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/Cloth.psd using Guid(d8c2816d074e4481abfc6c64ececf68a) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '9d6d4a70ee433d058c9178448d988290') in 0.01076275 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 20.425865 seconds.
+  path: Assets/majong/hands/outer_cloth.001.prefab
+  artifactKey: Guid(d8da436b91e6248e18bd4f2513bca837) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/outer_cloth.001.prefab using Guid(d8da436b91e6248e18bd4f2513bca837) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '3e21b22a084e8028d30bb5d539ee3397') in 0.011862833 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 7
+
+========================================================================
+Received Import Request.
+  Time since last request: 11.667178 seconds.
+  path: Assets/majong/hands/outer_cloth.001.prefab
+  artifactKey: Guid(d8da436b91e6248e18bd4f2513bca837) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/outer_cloth.001.prefab using Guid(d8da436b91e6248e18bd4f2513bca837) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '3d1ec5a47e66e2f58aa7798162ba95e3') in 0.005152292 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 7
+
+========================================================================
+Received Import Request.
+  Time since last request: 75.653621 seconds.
+  path: Assets/majong/hands/outer_cloth.001.prefab
+  artifactKey: Guid(d8da436b91e6248e18bd4f2513bca837) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/outer_cloth.001.prefab using Guid(d8da436b91e6248e18bd4f2513bca837) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'f0cfd6952e79b37f7361ec8fc30b8f34') in 0.150949 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 6
+
+========================================================================
+Received Import Request.
+  Time since last request: 29.712283 seconds.
+  path: Assets/majong/hands/Miyu_Akey_Rigging.blend
+  artifactKey: Guid(db01733e18a124c68bf15bd24a11cd77) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/Miyu_Akey_Rigging.blend using Guid(db01733e18a124c68bf15bd24a11cd77) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '0c0d8835d3dbbb4234a17da8446c63c9') in 0.161581583 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 589
+
+========================================================================
+Received Import Request.
+  Time since last request: 20.435132 seconds.
+  path: Assets/majong/hands/temp.blend
+  artifactKey: Guid(928ed2ac2b3a2449e93515e9d1ab7e6a) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/temp.blend using Guid(928ed2ac2b3a2449e93515e9d1ab7e6a) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '659f7893fa5cfcabdd758fe6815254b6') in 0.046445417 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 38
+
+========================================================================
+Received Import Request.
+  Time since last request: 160.822128 seconds.
+  path: Assets/majong/hands/788Miyu_Akey_Rigging.blend
+  artifactKey: Guid(8b3827ed96910440fa6e6475dcbd9cdd) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/788Miyu_Akey_Rigging.blend using Guid(8b3827ed96910440fa6e6475dcbd9cdd) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '8b28d22f710f5b33de71d0a483779cdd') in 0.141674459 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 602
+
+========================================================================
+Received Import Request.
+  Time since last request: 39.445303 seconds.
+  path: Assets/majong/hands/333.blend
+  artifactKey: Guid(6ca81842ec91143f9a099ce8a6e290bb) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/333.blend using Guid(6ca81842ec91143f9a099ce8a6e290bb) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '44c24b7b84fcf82a8ff6a919a6901e02') in 0.179242667 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 597
+
+========================================================================
+Received Import Request.
+  Time since last request: 121.129829 seconds.
+  path: Assets/majong/hands/999.blend
+  artifactKey: Guid(c7c783e1b43d044b1a5eae35bd51cad6) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/999.blend using Guid(c7c783e1b43d044b1a5eae35bd51cad6) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'ac47083fe79eacf8cc34b3941c7f0b2a') in 0.141067959 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 569
+
+========================================================================
+Received Import Request.
+  Time since last request: 106.715767 seconds.
+  path: Assets/majong/hands/100.blend
+  artifactKey: Guid(1de7aecb1b1c546d3ade04984fbe30d8) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/100.blend using Guid(1de7aecb1b1c546d3ade04984fbe30d8) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '2e920409330e1bfb8f71c9cd3be5f629') in 0.021425166 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 9
+
+========================================================================
+Received Import Request.
+  Time since last request: 984.978699 seconds.
+  path: Assets/majong/hands/001.controller
+  artifactKey: Guid(e8d8586b1c8de4689851d9e17ff9aa63) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/001.controller using Guid(e8d8586b1c8de4689851d9e17ff9aa63) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '73de31fb60f998a1a2249b2dcb71da86') in 0.007037708 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 144.255043 seconds.
+  path: Assets/majong/hands/New Animation.anim
+  artifactKey: Guid(46478fc9b48d64eeb89db6db619030d0) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/New Animation.anim using Guid(46478fc9b48d64eeb89db6db619030d0) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '779dd19968a4fccd1041b0629afcaa0a') in 0.001034042 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 44.295473 seconds.
+  path: Assets/majong/hands/11Ani.anim
+  artifactKey: Guid(46478fc9b48d64eeb89db6db619030d0) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/11Ani.anim using Guid(46478fc9b48d64eeb89db6db619030d0) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '231d87949313d9a70edbe641c19b2364') in 0.000962458 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 122.812226 seconds.
+  path: Assets/majong/hands/111Ani.anim
+  artifactKey: Guid(b4dd55cb4654c47e3b1ddb2ed01d8345) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/111Ani.anim using Guid(b4dd55cb4654c47e3b1ddb2ed01d8345) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '3fdb363813be2863d3507f504094d8c2') in 0.000753125 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 94.445989 seconds.
+  path: Assets/majong/hands/111.anim
+  artifactKey: Guid(cd6df771140584014924302d3480d9be) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/111.anim using Guid(cd6df771140584014924302d3480d9be) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '21803dc27565bd1eaf0ec03ac3d99ea5') in 0.000945833 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 26.745635 seconds.
+  path: Assets/majong/hands/111Ani.anim
+  artifactKey: Guid(cd6df771140584014924302d3480d9be) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/111Ani.anim using Guid(cd6df771140584014924302d3480d9be) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '96eb5cd89bc6070659bbb2c1ff133047') in 0.000817667 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 440.621564 seconds.
+  path: Assets/majong/hands/Materials
+  artifactKey: Guid(42f4a6b761d944a5cb0e2bd735bb264e) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/Materials using Guid(42f4a6b761d944a5cb0e2bd735bb264e) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'ece100bea7e89e5da79511d06b8f983c') in 0.00033925 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.055887 seconds.
+  path: Assets/majong/hands/Materials/Cloth.mat
+  artifactKey: Guid(7428e330ebc3a47fab13ef84ca27e755) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/Materials/Cloth.mat using Guid(7428e330ebc3a47fab13ef84ca27e755) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '2f2b41352067dcf66708063df8f54d9c') in 0.017589083 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 2
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000051 seconds.
+  path: Assets/majong/hands/Materials/Cloth 2.mat
+  artifactKey: Guid(d84134fb1e74e496695fcdefd421356e) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/Materials/Cloth 2.mat using Guid(d84134fb1e74e496695fcdefd421356e) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '0469729d2dfe1087b7d130c7a7ff2a1f') in 0.010392291 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 2
+
+========================================================================
+Received Import Request.
+  Time since last request: 111.957177 seconds.
+  path: Assets/majong/asset/1.jpg
+  artifactKey: Guid(221bdfd6cd85f487bb99afdce0d0bc62) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/asset/1.jpg using Guid(221bdfd6cd85f487bb99afdce0d0bc62) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'd465614fcaf30a705c7cc9249007dab2') in 0.015911125 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.000064 seconds.
+  path: Assets/majong/asset/4.jpg
+  artifactKey: Guid(3a4b17ccb3ded4585be5b2f1f525b52b) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/asset/4.jpg using Guid(3a4b17ccb3ded4585be5b2f1f525b52b) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'f8e8a43c7be48030c4e12ef23dd6671a') in 0.010253542 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 3
+
+========================================================================
+Received Import Request.
+  Time since last request: 63.936341 seconds.
+  path: Assets/majong/background
+  artifactKey: Guid(da73a23538ed542b094f867e231bedbc) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/background using Guid(da73a23538ed542b094f867e231bedbc) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'a33566eaa853e79fcdf62a4dd62f5697') in 0.000524292 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 0
+
+========================================================================
+Received Import Request.
+  Time since last request: 79.989413 seconds.
+  path: Assets/majong/hands/111.controller
+  artifactKey: Guid(d6d4e1f21a9ca45fdb10b4a3dbc1f7fc) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/111.controller using Guid(d6d4e1f21a9ca45fdb10b4a3dbc1f7fc) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '0043ba55f2292c35cd44a53fef141ecb') in 0.001053917 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 36.307163 seconds.
+  path: Assets/majong/hands/111.controller
+  artifactKey: Guid(d6d4e1f21a9ca45fdb10b4a3dbc1f7fc) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/111.controller using Guid(d6d4e1f21a9ca45fdb10b4a3dbc1f7fc) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '72a1f798433913f30b8c23bec17fe901') in 0.001211042 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 4
+
+========================================================================
+Received Import Request.
+  Time since last request: 482.693461 seconds.
+  path: Assets/majong/hands/400.controller
+  artifactKey: Guid(971d86872b9ff44f4af8ca28bf78ee04) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/400.controller using Guid(971d86872b9ff44f4af8ca28bf78ee04) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '5bb430dc01f03c26794efd4181aabff0') in 0.002165459 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 0.945060 seconds.
+  path: Assets/majong/hands/400Ani.anim
+  artifactKey: Guid(87c81ebec26ca4d0e9d4fc029569ae6f) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/400Ani.anim using Guid(87c81ebec26ca4d0e9d4fc029569ae6f) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'cc2cfad44307f76c3b023fdfba2b3265') in 0.000924209 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 113.109943 seconds.
+  path: Assets/majong/hands/100Ani.anim
+  artifactKey: Guid(51db4f3637a9e46b598285344c1fd49c) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/100Ani.anim using Guid(51db4f3637a9e46b598285344c1fd49c) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'c76c1884659ae58a3a4befaeece38e7a') in 0.000963292 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 4.330970 seconds.
+  path: Assets/majong/hands/100.controller
+  artifactKey: Guid(ac6f1c5870f284ad7be9b6753f41e9e5) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/100.controller using Guid(ac6f1c5870f284ad7be9b6753f41e9e5) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '4ac284c23b9a9b0a457df88dffd5fa51') in 0.000838625 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 100.823112 seconds.
+  path: Assets/majong/hands/200Ani.anim
+  artifactKey: Guid(f1d41658a18a848a4ae0f85f8082c491) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/200Ani.anim using Guid(f1d41658a18a848a4ae0f85f8082c491) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '7a977c4186c5615ca06e5f21969ebf0e') in 0.001102916 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 2.868353 seconds.
+  path: Assets/majong/hands/300Ani.anim
+  artifactKey: Guid(8fc0626bba4d94ec181ab9a30ce9219a) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/300Ani.anim using Guid(8fc0626bba4d94ec181ab9a30ce9219a) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'e81d39da38a519478a28e30cc4904a5d') in 0.001045458 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 8.095627 seconds.
+  path: Assets/majong/hands/200.controller
+  artifactKey: Guid(fe3fd4a003942486f8f049736b9698f9) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/200.controller using Guid(fe3fd4a003942486f8f049736b9698f9) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: 'de109727c0bfbc2ae9c5060ed8755cf1') in 0.000897375 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
+========================================================================
+Received Import Request.
+  Time since last request: 72.501819 seconds.
+  path: Assets/majong/hands/300.controller
+  artifactKey: Guid(9a585dbda2e604a2285ffb5494f08e33) Importer(815301076,1909f56bfc062723c751e8b465ee728b)
+Start importing Assets/majong/hands/300.controller using Guid(9a585dbda2e604a2285ffb5494f08e33) Importer(815301076,1909f56bfc062723c751e8b465ee728b) (PreviewImporter) -> (artifact id: '4253f9a3a54a1ff4ab1cf5f09f9bd5b2') in 0.000932458 seconds
+Number of updated asset objects reloaded before import = 0Number of asset objects unloaded after import = 1
+
