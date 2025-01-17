@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using Mirror;
+using Unity.VisualScripting;
 
 public class GameStatusUI : MonoBehaviour
 {
@@ -18,7 +19,7 @@ public class GameStatusUI : MonoBehaviour
 
     public bool IsUpdated = false;
 
-
+    public SpriteLightEffect[] spriteLightEffect;
 
     void Start()
     {
@@ -67,6 +68,8 @@ public class GameStatusUI : MonoBehaviour
 
         playerNameText.text = $"{localPlayerManager.PlayerName}";
 
+        
+
         // Enemy들의 CurrentScore, SeatWind 및 이름 표시
         var enemies = Object.FindObjectsByType<PlayerManager>(FindObjectsSortMode.None);
         foreach (var enemy in enemies)
@@ -80,6 +83,15 @@ public class GameStatusUI : MonoBehaviour
                     continue;
                 }
                 // 적의 점수 표시
+                if (enemy.PlayerTurnForLight)
+                {
+                    spriteLightEffect[relativeIndex].gameObject.SetActive(true);
+                    spriteLightEffect[relativeIndex].BlinkEffectOn();
+                }
+                else
+                {
+                    spriteLightEffect[relativeIndex].gameObject.SetActive(false);
+                }
                 enemyScoresText[relativeIndex].text = $"{(enemy.playerStatus.CurrentScore >= 0 ? "+" : "")}{enemy.playerStatus.CurrentScore}";
 
                 // 적의 SeatWind 표시
@@ -87,6 +99,18 @@ public class GameStatusUI : MonoBehaviour
 
                 // 적의 이름 표시
                 enemyNamesText[relativeIndex].text = $"{enemy.PlayerName}";
+            }
+            else
+            {
+                if (enemy.PlayerTurnForLight)
+                {
+                    spriteLightEffect[3].gameObject.SetActive(true);
+                    spriteLightEffect[3].BlinkEffectOn();
+                }
+                else
+                {
+                    spriteLightEffect[3].gameObject.SetActive(false);
+                }
             }
         }
 

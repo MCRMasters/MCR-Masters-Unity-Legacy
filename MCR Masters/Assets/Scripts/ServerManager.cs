@@ -328,9 +328,13 @@ public class ServerManager : NetworkBehaviour
 
 
         PlayerManagers[playerWindIndex].SetPlayerTurn(false);
+        //PlayerManagers[playerWindIndex].PlayerTurnForLight = false;
+        PlayerManagers[playerWindIndex].SetPlayerTurnForLight(false);
         playerWindIndex = (playerWindIndex + 1) % MaxPlayers;
         CurrentPlayerWindIndex = playerWindIndex;
         PlayerManagers[playerWindIndex].SetPlayerTurn(true);
+        //PlayerManagers[playerWindIndex].PlayerTurnForLight = true;
+        PlayerManagers[playerWindIndex].SetPlayerTurnForLight(true);
 
         Debug.Log($"[ProceedNextTurn] Next turn for playerWindIndex: {playerWindIndex}, playerIndex: {PlayerManagers[playerWindIndex].PlayerIndex}");
 
@@ -698,8 +702,11 @@ $"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority:
                 visibleTileCounts[i] += 1;
             }
             PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(false);
+            //PlayerManagers[CurrentPlayerWindIndex].PlayerTurnForLight = false;
+            PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurnForLight(false);
             CurrentPlayerWindIndex = playerWindIndex;
             PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(true);
+            PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurnForLight(true);
             return false;
         }
         else if (action.Type == ActionType.PON)
@@ -708,8 +715,10 @@ $"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority:
             handList[playerWindIndex].ApplyPon(sourceTileId, action.TileId, (BlockSource)action.Priority);
             visibleTileCounts[action.TileId] += 2;
             PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(false);
+            PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurnForLight(false);
             CurrentPlayerWindIndex = playerWindIndex;
             PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(true);
+            PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurnForLight(true);
             return false;
         }
         else if (action.Type == ActionType.KAN)
@@ -756,8 +765,10 @@ $"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority:
                 handList[playerWindIndex].ApplyDaiminKan(kanTileId, action.TileId, (BlockSource)action.Priority);
                 visibleTileCounts[action.TileId] += 3;
                 PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(false);
+                PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurnForLight(false);
                 CurrentPlayerWindIndex = playerWindIndex;
                 PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurn(true);
+                PlayerManagers[CurrentPlayerWindIndex].SetPlayerTurnForLight(true);
                 return false;
             }
 
@@ -1173,7 +1184,8 @@ $"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority:
             }
 
             Debug.Log($"PlayerManager for PlayerIndex {playerManager.PlayerIndex} has a valid connectionToClient: ConnectionId {playerManager.connectionToClient.connectionId}");
-
+            //playerManager.PlayerTurnForLight = false;
+            playerManager.SetPlayerTurnForLight(false);
             // RPC 호출
             playerManager.TargetSetEnemyIndexMap(playerManager.connectionToClient, playerWindToIndex, i);
         }

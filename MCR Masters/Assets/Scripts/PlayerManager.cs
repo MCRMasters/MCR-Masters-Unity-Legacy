@@ -20,6 +20,9 @@ public class PlayerManager : NetworkBehaviour
     [SyncVar(hook = nameof(OnPlayerStatusChanged))]
     public PlayerStatus playerStatus;
 
+    [SyncVar]
+    public bool PlayerTurnForLight;
+
     private float remainingTime;
     private float remainingTimeActionId;
 
@@ -1806,6 +1809,12 @@ public class PlayerManager : NetworkBehaviour
     }
 
     [Server]
+    public void SetPlayerTurnForLight(bool isTurn)
+    {
+        PlayerTurnForLight = isTurn;
+    }
+
+    [Server]
     public void SetPlayerTurn(bool isTurn)
     {
         var newStatus = playerStatus;
@@ -3323,7 +3332,6 @@ public class PlayerManager : NetworkBehaviour
 
         PlayerHandTiles.Clear();
         PlayerCallBlocksList.Clear();
-
         for (int i = 0; i < EnemyCallBlocksList.Length; i++)
         {
             if (EnemyCallBlocksList[i] == null)
