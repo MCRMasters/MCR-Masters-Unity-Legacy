@@ -209,7 +209,7 @@ namespace Game.Shared
                 return PriorityComparision;
             }
             // Type이 같으면 Priority 기준으로 정렬
-            return TileId.CompareTo(other.Priority);
+            return TileId.CompareTo(other.TileId);
         }
         public override string ToString()
         {

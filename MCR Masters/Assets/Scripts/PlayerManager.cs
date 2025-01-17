@@ -238,6 +238,8 @@ public class PlayerManager : NetworkBehaviour
     {
         if (playerIndex == PlayerIndex)
         {
+            animator = discardHandPrefabs[3].GetComponent<Animator>();
+            animator.SetTrigger("101FuroTrigger");
             if (kanType == KanType.DAIMINKAN)
             {
                 PerformDaiminKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, PlayerFuroField, PlayerHaipai, GetKawaByIndex(sourcePlayerIndex));
@@ -250,8 +252,11 @@ public class PlayerManager : NetworkBehaviour
         else
         {
             int relativeIndex = GetRelativeIndex(playerIndex);
+            animator = discardHandPrefabs[relativeIndex].GetComponent<Animator>();
             if (relativeIndex == 0)
             {
+                animator.SetTrigger("201FuroTrigger");
+
                 if (kanType == KanType.DAIMINKAN)
                 {
                     PerformDaiminKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldShimo, EnemyHaipaiShimo, GetKawaByIndex(sourcePlayerIndex));
@@ -263,6 +268,8 @@ public class PlayerManager : NetworkBehaviour
             }
             else if (relativeIndex == 1)
             {
+                animator.SetTrigger("301FuroTrigger");
+
                 if (kanType == KanType.DAIMINKAN)
                 {
                     PerformDaiminKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldToi, EnemyHaipaiToi, GetKawaByIndex(sourcePlayerIndex));
@@ -274,6 +281,8 @@ public class PlayerManager : NetworkBehaviour
             }
             else if (relativeIndex == 2)
             {
+                animator.SetTrigger("401FuroTrigger");
+
                 if (kanType == KanType.DAIMINKAN)
                 {
                     PerformDaiminKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldKami, EnemyHaipaiKami, GetKawaByIndex(sourcePlayerIndex));
@@ -617,21 +626,30 @@ public class PlayerManager : NetworkBehaviour
     {
         if (playerIndex == PlayerIndex)
         {
+            animator = discardHandPrefabs[3].GetComponent<Animator>();
+            animator.SetTrigger("101FuroTrigger");
             PerformPonSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, PlayerFuroField, PlayerHaipai, GetKawaByIndex(sourcePlayerIndex));
         }
         else
         {
             int relativeIndex = GetRelativeIndex(playerIndex);
+            animator = discardHandPrefabs[relativeIndex].GetComponent<Animator>();
             if (relativeIndex == 0)
             {
+                animator.SetTrigger("201FuroTrigger");
+
                 PerformPonSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldShimo, EnemyHaipaiShimo, GetKawaByIndex(sourcePlayerIndex));
             }
             else if (relativeIndex == 1)
             {
+                animator.SetTrigger("301FuroTrigger");
+
                 PerformPonSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldToi, EnemyHaipaiToi, GetKawaByIndex(sourcePlayerIndex));
             }
             else if (relativeIndex == 2)
             {
+                animator.SetTrigger("401FuroTrigger");
+
                 PerformPonSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldKami, EnemyHaipaiKami, GetKawaByIndex(sourcePlayerIndex));
             }
         }
@@ -815,22 +833,29 @@ public class PlayerManager : NetworkBehaviour
     {
         if (playerIndex == PlayerIndex)
         {
+            animator = discardHandPrefabs[3].GetComponent<Animator>();
+            animator.SetTrigger("101FuroTrigger");
             PerformChiiSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, PlayerFuroField, PlayerHaipai, GetKawaByIndex(sourcePlayerIndex));
         }
         else
         {
             int relativeIndex = GetRelativeIndex(playerIndex);
+            animator = discardHandPrefabs[relativeIndex].GetComponent<Animator>();
+            
             if (relativeIndex == 0)
             {
                 PerformChiiSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldShimo, EnemyHaipaiShimo, GetKawaByIndex(sourcePlayerIndex));
+                animator.SetTrigger("201FuroTrigger");
             }
             else if (relativeIndex == 1)
             {
                 PerformChiiSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldToi, EnemyHaipaiToi, GetKawaByIndex(sourcePlayerIndex));
+                animator.SetTrigger("301FuroTrigger");
             }
             else if (relativeIndex == 2)
             {
                 PerformChiiSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldKami, EnemyHaipaiKami, GetKawaByIndex(sourcePlayerIndex));
+                animator.SetTrigger("401FuroTrigger");
             }
         }
     }
