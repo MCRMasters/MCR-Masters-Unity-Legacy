@@ -304,46 +304,48 @@ public class TileGrid : MonoBehaviour
         }
     }
 
-    bool new_tsumo_flag = false;
+    HashSet<int> TedashiSet = new HashSet<int>();
+    int TedashiId = 0;
     private IEnumerator ShowTedashiCoroutine()
     {
         // 1. Remove null values from indexToChild and update the list
-        indexToChild = indexToChild.Where(obj => obj != null && obj.activeSelf == true).ToList();
+        List<int> activeIndices = indexToChild
+            .Select((child, index) => new { child, index })
+            .Where(item => item.child != null && item.child.activeSelf)
+            .Select(item => item.index)
+            .ToList();
 
-        if (indexToChild.Count == 0)
+        TedashiId++;
+        int localTedashiId = TedashiId;
+        TedashiSet.Add(localTedashiId);
+        if (activeIndices.Count == 0)
         {
             Debug.LogError("All objects in indexToChild are null.");
             yield break;
         }
 
         // 2. Pick random object from updated indexToChild
-        int randomIndex = UnityEngine.Random.Range(0, indexToChild.Count);
-        GameObject randomObject = indexToChild[randomIndex];
-
+        int randomIndex = activeIndices[UnityEngine.Random.Range(0, activeIndices.Count)];
         // 3. Hide it
-        randomObject.SetActive(false);
-        new_tsumo_flag = false;
+        indexToChild[randomIndex].SetActive(false);
+
+
         // 4. Wait 1 second
         yield return new WaitForSeconds(1f); //Destroy(randomObject ); 1초 기다리는동안 Destroy 당함
-        if (randomObject == null)
+        if (indexToChild[randomIndex] == null)
         {
             yield break;
         }
         // 5. Show it
-        randomObject.SetActive(true);
-        if (new_tsumo_flag)
+        indexToChild[randomIndex].SetActive(true);
+        TedashiSet.Remove(localTedashiId);
+        Debug.Log($"[ShowTedashiCoroutine] Tedashi Set Count: {TedashiSet.Count}");
+        if (TedashiSet.Count == 0)
         {
-            yield break;
+            indexToChild = indexToChild.Where(obj => obj != null && obj.activeSelf == true).ToList();
+            //indexToChild.Add(LastTsumoTileObject);
+            DestoryLastTile();
         }
-        indexToChild = indexToChild.Where(obj => obj != null && obj.activeSelf == true).ToList();
-        indexToChild.Add(LastTsumoTileObject);
-        DestoryLastTile();
-        //if (LastTsumoTileObject)
-        //{
-        //    Destroy(LastTsumoTileObject);
-        //    LastTsumoTileObject = null;
-        //}
-        
     }
 
 
@@ -358,7 +360,6 @@ public class TileGrid : MonoBehaviour
             //LastTsumoTileObject = null;
             return;
         }
-        new_tsumo_flag = true;
         if (LastTsumoTileObject != null && lastTsumoTileObject != LastTsumoTileObject)
         {
             Destroy(LastTsumoTileObject);

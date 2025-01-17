@@ -256,7 +256,6 @@ public class PlayerManager : NetworkBehaviour
             if (relativeIndex == 0)
             {
                 animator.SetTrigger("201FuroTrigger");
-
                 if (kanType == KanType.DAIMINKAN)
                 {
                     PerformDaiminKanSub(action, sourceTileId, playerIndex, sourcePlayerIndex, isDiscarded, EnemyFuroFieldShimo, EnemyHaipaiShimo, GetKawaByIndex(sourcePlayerIndex));
@@ -396,12 +395,14 @@ public class PlayerManager : NetworkBehaviour
                         }
                         else
                         {
-                            haipaiTileGrid.ShowTedashi(true);
+                            //haipaiTileGrid.ShowTedashi(true);
+                            haipaiTileGrid.DestoryLastTile();
                         }
                     }
                     else
                     {
-                        haipaiTileGrid.ShowTedashi(true);
+                        //haipaiTileGrid.ShowTedashi(true);
+                        haipaiTileGrid.DestoryLastTile();
                     }
                 }
             }
@@ -419,6 +420,7 @@ public class PlayerManager : NetworkBehaviour
                 tileEvent.SetUndraggable();
             }
         }
+
     }
     private void PerformDaiminKanSub(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, GameObject FuroField, GameObject HaiPaiField, GameObject KawaField)
     {

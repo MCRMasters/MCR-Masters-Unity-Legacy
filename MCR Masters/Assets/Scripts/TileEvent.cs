@@ -162,7 +162,7 @@ public class TileEvent : MonoBehaviour
 
         // 오프셋 계산 (width만큼 오른쪽, height/2만큼 위쪽으로 조정)
         offset = (Vector2)rectTransform.localPosition - localMousePosition
-                 + new Vector2(width / 4 * 5, height / 2 + hoverOffset);
+                 + new Vector2(0, hoverOffset);
 
         Debug.Log($"StartDrag: Calculated offset = {offset}");
     }
