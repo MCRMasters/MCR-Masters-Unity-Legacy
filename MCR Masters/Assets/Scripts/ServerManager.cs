@@ -7,6 +7,7 @@ using Mirror;
 using Game.Shared;
 using System.Collections;
 using DataTransfer;
+using System.Runtime.InteropServices;
 
 
 
@@ -157,7 +158,9 @@ public class ServerManager : NetworkBehaviour
             {
                 Debug.Log($"[FinalizeRoundScore] Sending TargetShowRoundScore to PlayerManager of connection {conn.Key}.");
                 HandData copyHandData = handData.DeepCopy();
-                playerManager.TargetShowRoundScore(conn.Value, playerIndex, huYakuScoreArray, totalScore, copyHandData);
+                playerManager.SetPlayerTurn(false);
+                playerManager.SetPlayerTurnForLight(false);
+                playerManager.TargetShowRoundScore(conn.Value, PlayerManagers[playerIndex], huYakuScoreArray, totalScore, copyHandData);
             }
             else
             {
@@ -414,9 +417,12 @@ public class ServerManager : NetworkBehaviour
         }
         else
         {
-            if (handList[playerWindIndex].ClosedTiles[tileId] >= 4)
+            for (int handTileId = 0; handTileId < 34; ++handTileId)
             {
-                resultList.Add(new ActionPriorityInfo(ActionType.KAN, GetPriorityFromWind(playerWindIndex), tileId));
+                if (handList[playerWindIndex].ClosedTiles[handTileId] >= 4)
+                {
+                    resultList.Add(new ActionPriorityInfo(ActionType.KAN, GetPriorityFromWind(playerWindIndex), handTileId));
+                }
             }
             foreach (Block block in handList[playerWindIndex].CallBlocks)
             {
@@ -1460,7 +1466,7 @@ $"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority:
             kawaTilesList[i] = new();
             visibleTileCounts[i] = 0;
         }
-        //for (int tileNum = 0; tileNum < 4; tileNum++)
+        //for (int tileNum = 0; tileNum < 1; tileNum++)
         for (int tileNum = 0; tileNum < 34; tileNum++)
         {
             for (int i = 0; i < 4; i++)
@@ -1526,8 +1532,8 @@ $"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority:
     private void DealTilesToPlayersTest()
     {
         handList[0].DrawFirstHand(new List<int> { 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8 });
+        //handList[1].DrawFirstHand(new List<int> { 27, 27, 27, 27, 28, 28, 28, 28, 29, 29, 29, 29, 30 });
         handList[1].DrawFirstHand(new List<int> { 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8 });
-        //handList[2].DrawFirstHand(new List<int> { 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8 });
         //handList[3].DrawFirstHand(new List<int> { 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 8 });
         //handList[1].DrawFirstHand(new List<int> { 0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33 });
         handList[2].DrawFirstHand(new List<int> { 0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33 });

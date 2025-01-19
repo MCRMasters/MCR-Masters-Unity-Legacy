@@ -5,7 +5,9 @@ using TMPro;
 
 public class LobbyUI : MonoBehaviour
 {
-    public Button readyButton; // Button을 Inspector에서 연결하지 않아도 됩니다.
+    public TMP_InputField playerNameInput; // 이름 입력 필드
+    public Button setNameButton;          // 이름 설정 버튼
+    public Button readyButton;            // 준비 버튼
     private CustomNetworkRoomPlayer roomPlayer;
 
     void Start()
@@ -26,16 +28,20 @@ public class LobbyUI : MonoBehaviour
             return;
         }
 
-        // ReadyButton 동적 찾기
+        // ReadyButton 및 PlayerNameInput 동적 찾기
         readyButton = GameObject.Find("ReadyButton")?.GetComponent<Button>();
-        if (readyButton == null)
+        playerNameInput = GameObject.Find("PlayerNameInput")?.GetComponent<TMP_InputField>();
+        setNameButton = GameObject.Find("SetNameButton")?.GetComponent<Button>();
+
+        if (readyButton == null || playerNameInput == null || setNameButton == null)
         {
-            Debug.LogError("LobbyUI: ReadyButton not found. Check the GameObject name.");
+            Debug.LogError("LobbyUI: UI elements not found. Check their names.");
             return;
         }
 
         // 버튼 클릭 이벤트 추가
         readyButton.onClick.AddListener(OnReadyButtonClicked);
+        setNameButton.onClick.AddListener(OnSetNameClicked);
 
         // 초기 버튼 상태 설정
         UpdateButtonUI(false);
@@ -47,6 +53,10 @@ public class LobbyUI : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Space))
         {
             OnReadyButtonClicked();
+        }
+        if (Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            OnSetNameClicked();
         }
     }
 
@@ -60,6 +70,16 @@ public class LobbyUI : MonoBehaviour
 
             // UI 업데이트
             UpdateButtonUI(newReadyState);
+        }
+    }
+
+    public void OnSetNameClicked()
+    {
+        if (roomPlayer != null && !string.IsNullOrWhiteSpace(playerNameInput.text))
+        {
+            // 입력한 이름을 서버로 전송
+            roomPlayer.CmdSetPlayerName(playerNameInput.text);
+            Debug.Log($"Player name set to: {playerNameInput.text}");
         }
     }
 

@@ -19,7 +19,7 @@ public class TileGrid : MonoBehaviour
     public GameObject playerManager;
     private GameObject LastTsumoTileObject; // Reference to the last added Tsumo tile
     private List<GameObject> indexToChild;
-
+    private bool isTsumoState;
 
     public void EmptyAll()
     {
@@ -103,6 +103,11 @@ public class TileGrid : MonoBehaviour
             GameObject child = childList[i];
             int row = i / columns;
             int column = i % columns;
+            if (row >= 3)
+            {
+                column += (row - 2) * columns;
+                row = 2;
+            }
 
             // Adjust child's size (if it has a RectTransform)
             RectTransform rectTransform = child.GetComponent<RectTransform>();
@@ -155,7 +160,11 @@ public class TileGrid : MonoBehaviour
             GameObject child = childList[i];
             int row = i / columns;
             int column = i % columns;
-
+            if (row >= 3)
+            {
+                column += (row - 2) * columns;
+                row = 2;
+            }
             // Adjust child's size (if it has a RectTransform)
             RectTransform rectTransform = child.GetComponent<RectTransform>();
             if (rectTransform != null)
@@ -183,7 +192,6 @@ public class TileGrid : MonoBehaviour
         indexToChild = childList;
         string childDebugInfo = string.Join(", ", indexToChild.Select(child => child?.name ?? "null"));
         Debug.Log($"indexToChild contents: [{childDebugInfo}]");
-
         if (LastTsumoTileObject != null)
         {
             ShowTsumoTile(LastTsumoTileObject);
@@ -286,6 +294,7 @@ public class TileGrid : MonoBehaviour
             {
                 Destroy(LastTsumoTileObject);
                 LastTsumoTileObject = null;
+                isTsumoState = false;
             }
         }
     }
@@ -297,6 +306,7 @@ public class TileGrid : MonoBehaviour
             if (LastTsumoTileObject)
                 Destroy(LastTsumoTileObject);
             LastTsumoTileObject = null;
+            isTsumoState = false;
         }
         else
         {
@@ -344,14 +354,19 @@ public class TileGrid : MonoBehaviour
         {
             indexToChild = indexToChild.Where(obj => obj != null && obj.activeSelf == true).ToList();
             //indexToChild.Add(LastTsumoTileObject);
-            DestoryLastTile();
+            if (isTsumoState)
+            {
+                DestoryLastTile();
+            }
         }
+        isTsumoState = false;
     }
 
 
 
     public void ShowTsumoTile(GameObject lastTsumoTileObject)
     {
+        isTsumoState = true;
         if (lastTsumoTileObject == null)
         {
             //Debug.LogError("remove last tsumo tile.");

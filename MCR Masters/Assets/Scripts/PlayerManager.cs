@@ -8,6 +8,7 @@ using System.Collections;
 using System;
 using DataTransfer;
 using TMPro;
+using Unity.VisualScripting;
 
 public class PlayerManager : NetworkBehaviour
 {
@@ -1369,8 +1370,10 @@ public class PlayerManager : NetworkBehaviour
         // 3. 쯔모패 표시
         if (true)
         {
+            currentXPosition += groupSpacing;
             GameObject tile = Instantiate(TilePrefabArray[hand.WinningTile], handField.transform);
             tile.name = TileDictionary.NumToString[hand.WinningTile];
+
 
             RectTransform tileRect = tile.GetComponent<RectTransform>();
             tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
@@ -1401,36 +1404,180 @@ public class PlayerManager : NetworkBehaviour
     }
 
 
+    public GameObject[] FuEffectAnimatorPrefabs;
 
-    [TargetRpc]
-    public void TargetShowRoundScore(NetworkConnection target, int playerIndex, List<YakuScoreData> huYakuScoreArray, int totalScore, HandData hand)
+    public IEnumerator PlayFuEffectCoroutine(PlayerManager HuPlayerManager, HandData hand, int score)
     {
-        //DeleteButtons();
+        Debug.Log($"[PlayFuEffectCoroutine] 후 효과 시작 - 플레이어: {HuPlayerManager.PlayerName}, 점수: {score}");
+
+        if (HuPlayerManager.PlayerIndex != PlayerIndex)
+        {
+            int relativeIndex = GetRelativeIndex(HuPlayerManager.PlayerIndex);
+            Debug.Log($"[PlayFuEffectCoroutine] 상대방 플레이어 상대 인덱스: {relativeIndex}");
+
+            if (relativeIndex >= 0)
+            {
+                TileGrid tileGrid = EnemyHaipaiList[relativeIndex].GetComponent<TileGrid>();
+                hand.ClosedTiles[hand.WinningTile] -= 1;
+                Debug.Log($"[PlayFuEffectCoroutine] 상대방의 패 초기화 및 승리 타일 제거. 승리 타일: {hand.WinningTile}");
+
+                if (tileGrid != null)
+                {
+                    tileGrid.EmptyAll();
+                    Debug.Log($"[PlayFuEffectCoroutine] 상대방 타일 그리드 초기화 완료.");
+
+                    for (int i = 0; i < hand.ClosedTiles.Length; ++i)
+                    {
+                        for (int j = 0; j < hand.ClosedTiles[i]; ++j)
+                        {
+                            GameObject spawnTile = Instantiate(TilePrefabArray[i], EnemyHaipaiList[relativeIndex].transform);
+                            tileGrid.AddTileToLastIndex(spawnTile);
+                        }
+                    }
+                    Debug.Log($"[PlayFuEffectCoroutine] 상대방 손패 다시 그리기 완료.");
+
+                    tileGrid.ShowTsumoTile(Instantiate(TilePrefabArray[hand.WinningTile], EnemyHaipaiList[relativeIndex].transform));
+                    Debug.Log($"[PlayFuEffectCoroutine] 승리 타일 표시 완료. 타일 ID: {hand.WinningTile}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[PlayFuEffectCoroutine] TileGrid를 찾지 못했습니다. 상대 인덱스: {relativeIndex}");
+                }
+            }
+        }
+        AudioSource audioSource;
+        // Fu Effect 애니메이션 실행 및 대기
+        if (score >= 32)
+        {
+            Debug.Log($"[PlayFuEffectCoroutine] 고득점 효과 실행 (32점 이상).");
+            RestoreTransparency(FuEffectAnimatorPrefabs[1]);
+            animator = FuEffectAnimatorPrefabs[1].GetComponent<Animator>();
+            audioSource = FuEffectAnimatorPrefabs[1].GetComponent<AudioSource>();
+            StartCoroutine(PlayAudioSource(audioSource));
+            animator.SetTrigger("DdingTrigger");
+            yield return StartCoroutine(DeactivateEffectAfterDelay(1.557f, FuEffectAnimatorPrefabs[1]));
+            Debug.Log($"[PlayFuEffectCoroutine] 고득점 효과 종료.");
+        }
+        else if (score >= 16)
+        {
+            Debug.Log($"[PlayFuEffectCoroutine] 중간 점수 효과 실행 (16~31점).");
+            RestoreTransparency(FuEffectAnimatorPrefabs[0]);
+            animator = FuEffectAnimatorPrefabs[0].GetComponent<Animator>();
+            audioSource = FuEffectAnimatorPrefabs[0].GetComponent<AudioSource>();
+            StartCoroutine(PlayAudioSource(audioSource));
+            animator.SetTrigger("FakerTrigger");
+            yield return StartCoroutine(DeactivateEffectAfterDelay(1.557f, FuEffectAnimatorPrefabs[0]));
+            Debug.Log($"[PlayFuEffectCoroutine] 중간 점수 효과 종료.");
+        }
+        else
+        {
+            Debug.Log($"[PlayFuEffectCoroutine] 점수가 낮아 Hu 효과를 실행하지 않습니다. (점수: {score})");
+        }
+
+        // 추가 대기 시간
+        yield return new WaitForSeconds(3f);
+        Debug.Log($"[PlayFuEffectCoroutine] Hu 효과 전체 완료.");
+    }
+
+    private IEnumerator PlayAudioSource(AudioSource audioSource)
+    {
+        if (audioSource == null)
+        {
+            Debug.LogWarning("[PlayAudioSource] AudioSource가 비어있습니다.");
+            yield break;
+        }
+
+        audioSource.Play();  // 오디오 재생
+        Debug.Log("[PlayAudioSource] 오디오 재생 시작");
+
+        // 오디오가 재생 중일 동안 대기
+        while (audioSource.isPlaying)
+        {
+            yield return null;  // 매 프레임 대기
+        }
+
+        Debug.Log("[PlayAudioSource] 오디오 재생 완료");
+    }
+
+
+    /// <summary>
+    /// 오브젝트를 즉시 투명하게 만드는 함수
+    /// </summary>
+    private IEnumerator DeactivateEffectAfterDelay(float delay, GameObject effectPrefab)
+    {
+        Debug.Log($"[DeactivateEffectAfterDelay] {delay}초 후 Hu 효과 즉시 투명화 예정.");
+
+        // Renderer 가져오기
+        Renderer renderer = effectPrefab.GetComponent<Renderer>();
+        if (renderer == null)
+        {
+            Debug.LogWarning("[DeactivateEffectAfterDelay] Renderer를 찾을 수 없습니다.");
+            yield break;
+        }
+
+        // delay 후 투명화
+        yield return new WaitForSeconds(delay);
+
+        // 즉시 알파값을 0으로 설정 (완전 투명)
+        Color color = renderer.material.color;
+        color.a = 0f;  // 투명하게 설정
+        renderer.material.color = color;
+
+        Debug.Log("[DeactivateEffectAfterDelay] Hu 효과 즉시 투명화 완료.");
+    }
+
+    /// <summary>
+    /// 오브젝트의 투명도를 완전히 불투명(알파값 1)으로 복구하는 함수
+    /// </summary>
+    private void RestoreTransparency(GameObject effectPrefab)
+    {
+        Renderer renderer = effectPrefab.GetComponent<Renderer>();
+        if (renderer == null)
+        {
+            Debug.LogWarning("[RestoreTransparency] Renderer를 찾을 수 없습니다.");
+            return;
+        }
+
+        // 알파값을 1로 설정 (완전 불투명)
+        Color color = renderer.material.color;
+        color.a = 1f;  // 불투명하게 설정
+        renderer.material.color = color;
+
+        Debug.Log("[RestoreTransparency] 투명도 원상복구 완료.");
+    }
+
+
+
+
+    public IEnumerator TargetShowRoundScoreSub(NetworkConnection target, PlayerManager HuPlayerManager, List<YakuScoreData> huYakuScoreArray, int totalScore, HandData hand)
+    {
+        yield return StartCoroutine(PlayFuEffectCoroutine(HuPlayerManager, hand, totalScore));  // Wait for the Fu effect to complete
+
         // Main Canvas 찾기
         GameObject mainCanvas = GameObject.Find("Main Canvas");
         if (mainCanvas == null)
         {
             Debug.LogError("[TargetShowRoundScore] Main Canvas not found.");
-            return;
+            yield break;
         }
 
-
         // 팝업 UI 생성
-        popupObject = Instantiate(popupPrefab, mainCanvas.transform); // Main Canvas에 추가
+        popupObject = Instantiate(popupPrefab, mainCanvas.transform);
         RectTransform popupRect = popupObject.GetComponent<RectTransform>();
 
         TMP_Text scoreText = popupObject.transform.Find("Canvas/ScoreListText").GetComponent<TMP_Text>();
         TMP_Text totalScoreText = popupObject.transform.Find("Canvas/TotalScoreText").GetComponent<TMP_Text>();
-
+        TMP_Text nameText = popupObject.transform.Find("Canvas/NameText").GetComponent<TMP_Text>();
         GameObject HandField = popupObject.transform.Find("Canvas/HandField").gameObject;
         ShowHand(HandField, hand);
 
-
-        if (scoreText == null || totalScoreText == null)
+        if (scoreText == null || totalScoreText == null || nameText == null)
         {
             Debug.LogError("[TargetShowRoundScore] ScoreListText or TotalScoreText not found in popup prefab.");
-            return;
+            yield break;
         }
+
+        nameText.text = HuPlayerManager.PlayerName;
 
         // 점수 데이터 표시
         int maxRows = huYakuScoreArray.Count >= 8 ? 8 : 5;
@@ -1451,14 +1598,122 @@ public class PlayerManager : NetworkBehaviour
             {
                 if (!string.IsNullOrEmpty(table[row, column]))
                 {
-                    scoreDisplay += table[row, column].PadRight(40);
+                    scoreDisplay += table[row, column].PadRight(50);
                 }
             }
             scoreDisplay += "\n";
         }
 
         scoreText.text = scoreDisplay;
-        scoreText.fontSize = huYakuScoreArray.Count >= 8 ? 24 : (huYakuScoreArray.Count >= 5 ? 30 : 40);
+        scoreText.fontSize = huYakuScoreArray.Count >= 8 ? 32 : (huYakuScoreArray.Count >= 5 ? 40 : 48);
+        totalScoreText.text = $"{totalScore} Points";
+
+        // 총 점수 색상 설정
+        if (totalScore < 16)
+        {
+            totalScoreText.color = Color.black;
+        }
+        else if (totalScore < 32)
+        {
+            totalScoreText.color = Color.blue;
+        }
+        else if (totalScore < 48)
+        {
+            totalScoreText.color = Color.red;
+        }
+        else
+        {
+            totalScoreText.color = new Color(1.0f, 0.84f, 0.0f); // Gold
+        }
+
+        // Material 색상 덮어쓰기
+        Material material = totalScoreText.fontMaterial;
+        material.SetColor(ShaderUtilities.ID_FaceColor, totalScoreText.color);
+        totalScoreText.fontMaterial = material;
+
+        // 확인 버튼 처리
+        Button confirmButton = popupObject.transform.Find("Canvas/ConfirmButton").GetComponent<Button>();
+        if (confirmButton == null)
+        {
+            Debug.LogError("[TargetShowRoundScore] ConfirmButton not found in popup prefab.");
+            yield break;
+        }
+        DeleteButtons();
+        IsPopupConfirmed = false;
+        confirmButton.onClick.AddListener(() =>
+        {
+            IsPopupConfirmed = true;
+        });
+
+        // 10초 대기 또는 확인 버튼 클릭 대기
+        yield return StartCoroutine(WaitForPopupConfirmation(10f));
+    }
+
+
+
+    [TargetRpc]
+    public void TargetShowRoundScore(NetworkConnection target, PlayerManager HuPlayerManager, List<YakuScoreData> huYakuScoreArray, int totalScore, HandData hand)
+    {
+
+        StartCoroutine(TargetShowRoundScoreSub(target, HuPlayerManager, huYakuScoreArray, totalScore, hand));
+        /*
+        PlayFuEffectAndWait(HuPlayerManager, hand, totalScore);
+        //DeleteButtons();
+        // Main Canvas 찾기
+        GameObject mainCanvas = GameObject.Find("Main Canvas");
+        if (mainCanvas == null)
+        {
+            Debug.LogError("[TargetShowRoundScore] Main Canvas not found.");
+            return;
+        }
+
+
+        // 팝업 UI 생성
+        popupObject = Instantiate(popupPrefab, mainCanvas.transform); // Main Canvas에 추가
+        RectTransform popupRect = popupObject.GetComponent<RectTransform>();
+
+        TMP_Text scoreText = popupObject.transform.Find("Canvas/ScoreListText").GetComponent<TMP_Text>();
+        TMP_Text totalScoreText = popupObject.transform.Find("Canvas/TotalScoreText").GetComponent<TMP_Text>();
+        TMP_Text nameText = popupObject.transform.Find("Canvas/NameText").GetComponent<TMP_Text>();
+        GameObject HandField = popupObject.transform.Find("Canvas/HandField").gameObject;
+        ShowHand(HandField, hand);
+
+
+        if (scoreText == null || totalScoreText == null || nameText == null)
+        {
+            Debug.LogError("[TargetShowRoundScore] ScoreListText or TotalScoreText not found in popup prefab.");
+            return;
+        }
+
+        nameText.text = HuPlayerManager.PlayerName;
+
+        // 점수 데이터 표시
+        int maxRows = huYakuScoreArray.Count >= 8 ? 8 : 5;
+        int totalColumns = Mathf.CeilToInt((float)huYakuScoreArray.Count / maxRows);
+        string[,] table = new string[maxRows, totalColumns];
+
+        for (int i = 0; i < huYakuScoreArray.Count; i++)
+        {
+            int row = i % maxRows;
+            int column = i / maxRows;
+            table[row, column] = $"{YakuDictionary.dict[huYakuScoreArray[i].YakuId]} : {huYakuScoreArray[i].Score}";
+        }
+
+        string scoreDisplay = "";
+        for (int row = 0; row < maxRows; row++)
+        {
+            for (int column = 0; column < totalColumns; column++)
+            {
+                if (!string.IsNullOrEmpty(table[row, column]))
+                {
+                    scoreDisplay += table[row, column].PadRight(50);
+                }
+            }
+            scoreDisplay += "\n";
+        }
+
+        scoreText.text = scoreDisplay;
+        scoreText.fontSize = huYakuScoreArray.Count >= 8 ? 32 : (huYakuScoreArray.Count >= 5 ? 40 : 48);
         totalScoreText.text = $"{totalScore} Points";
 
         // 총 점수 표시 및 색상 설정
@@ -1501,6 +1756,7 @@ public class PlayerManager : NetworkBehaviour
 
         // 10초 대기 또는 확인 버튼 클릭 대기
         StartCoroutine(WaitForPopupConfirmation(10f));
+        */
     }
 
     [TargetRpc]
@@ -1693,6 +1949,9 @@ public class PlayerManager : NetworkBehaviour
         discardHandPrefabs[1] = GameObject.Find("301");
         discardHandPrefabs[2] = GameObject.Find("401");
         discardHandPrefabs[3] = GameObject.Find("101");
+
+        FuEffectAnimatorPrefabs[0] = GameObject.Find("4_0");
+        FuEffectAnimatorPrefabs[1] = GameObject.Find("DDing");
         //animator = GetComponent<Animator>();
 
         DeleteButtons();
@@ -1960,7 +2219,14 @@ public class PlayerManager : NetworkBehaviour
         TileGrid tileGridHaipai = HaipaiField.GetComponent<TileGrid>();
         if (tileGridHaipai != null)
         {
-            tileGridHaipai.DestoryByTileId(tile);
+            if (playerIndex == PlayerIndex)
+            {
+                tileGridHaipai.DestoryByTileId(tile);
+            }
+            else
+            {
+                tileGridHaipai.DestoryLastTile();
+            }
         }
         // 조건에 맞는 하위 오브젝트 찾기
         Transform targetChild = FindMatchingChild(FuroField.transform, tile);
@@ -2918,7 +3184,7 @@ public class PlayerManager : NetworkBehaviour
                     GameObject tile = Instantiate(TilePrefabArray[localChoice.TileId], tileGroup.transform);
                     RectTransform tileRect = tile.GetComponent<RectTransform>();
                     tileRect.sizeDelta = new Vector2(tileWidth, tileHeight);
-                    tileRect.anchoredPosition = new Vector2(i * buttonWidth, 0); // 타일 간격
+                    tileRect.anchoredPosition = new Vector2(i * tileWidth, 0); // 타일 간격
 
                     // TileEvent의 isDraggable 설정
                     TileEvent tileEvent = tile.GetComponent<TileEvent>();

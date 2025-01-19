@@ -1,18 +1,11 @@
 using Mirror;
-using System;
 using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using System.Security.Cryptography;
-using UnityEngine.UI;
-using TMPro;
 
 public class CustomNetworkRoomManager : NetworkRoomManager
 {
     public int RequiredPlayerCount = 4; // 플레이어 수를 조정 가능한 변수로 설정
 
-    // 리눅스 서버 빌드 테스트시 활성화
-    
     public override void Start()
     {
         base.Start();
@@ -22,23 +15,41 @@ public class CustomNetworkRoomManager : NetworkRoomManager
             networkAddress = "0.0.0.0"; // 모든 네트워크 인터페이스에서 연결 대기
             StartServer();
             Debug.Log("Server started in headless mode.");
-            Screen.SetResolution(1920, 1080, false);
         }
-        else // 클라이언트 실행 (HUD 사용)
+        else // 클라이언트 실행
         {
             networkAddress = "192.168.115.189";
             Debug.Log("Client mode. Use the HUD to enter IP and connect.");
         }
     }
-    
-
-    private List<PlayerManager> playerManagers = new List<PlayerManager>();
-
-    public override void OnServerAddPlayer(NetworkConnectionToClient conn)
+    /*
+    public override void OnRoomServerAddPlayer(NetworkConnectionToClient conn)
     {
-        // 기본 플레이어 객체 생성
-        base.OnServerAddPlayer(conn);
+        base.OnRoomServerAddPlayer(conn);
+
+        // CustomNetworkRoomPlayer에서 이름을 받아오기
+        var roomPlayer = conn.identity.GetComponent<CustomNetworkRoomPlayer>();
+
+        if (roomPlayer != null)
+        {
+            // ✅ 플레이어 프리팹을 인스턴스화
+            GameObject playerInstance = Instantiate(playerPrefab);
+
+            // ✅ 인스턴스에서 PlayerManager 컴포넌트 가져오기
+            var playerManager = playerInstance.GetComponent<PlayerManager>();
+
+            if (playerManager != null)
+            {
+                // ✅ 입력받은 플레이어 이름을 인스턴스에 할당
+                playerManager.PlayerName = roomPlayer.PlayerName;
+                Debug.Log($"Assigned PlayerName: {roomPlayer.PlayerName} to PlayerManager.");
+            }
+
+            // ✅ 서버에 인스턴스 추가
+            NetworkServer.AddPlayerForConnection(conn, playerInstance);
+        }
     }
+    */
 
 
     public override void OnRoomServerPlayersReady()
@@ -48,12 +59,6 @@ public class CustomNetworkRoomManager : NetworkRoomManager
         {
             Debug.Log("All players are ready.");
         }
-    }
-
-    public override void OnServerDisconnect(NetworkConnectionToClient conn)
-    {
-        base.OnServerDisconnect(conn);
-        Debug.Log($"Player disconnected: {conn.connectionId}. Total players: {roomSlots.Count}");
     }
 
     public override void OnRoomServerSceneChanged(string sceneName)
@@ -67,6 +72,6 @@ public class CustomNetworkRoomManager : NetworkRoomManager
         }
 
         base.OnRoomServerSceneChanged(sceneName);
-        Debug.Log("Scene Changed to {sceneName}..");
+        Debug.Log($"Scene Changed to {sceneName}.");
     }
 }

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6996135421176964798}
   - component: {fileID: 2203482217970152134}
   - component: {fileID: 1463190417251752636}
+  - component: {fileID: 6743783811212822614}
   m_Layer: 0
   m_Name: RoomManager
   m_TagString: Untagged
@@ -127,6 +128,8 @@ MonoBehaviour:
   - {fileID: 7244825381931897107, guid: 7c73900c3e9b1114c858cf7ba856c2f9, type: 3}
   - {fileID: 5111901911615269763, guid: 423064468e22c7640b2bac2f045e2189, type: 3}
   - {fileID: 1441486383242741153, guid: c6211e9653221f645830f51cdc972d83, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
   exceptionsDisconnect: 1
   snapshotSettings:
     bufferTimeMultiplier: 2
@@ -194,3 +197,16 @@ MonoBehaviour:
   offsetX: 0
   offsetY: 0
   my_manager: {fileID: 6996135421176964798}
+--- !u!114 &6743783811212822614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7148554449997493305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f506e8c0f2823a343b91954f2ab2e5db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetAspect: 1.7777778

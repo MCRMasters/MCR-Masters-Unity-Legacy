@@ -3,6 +3,16 @@ using UnityEngine;
 
 public class CustomNetworkRoomPlayer : NetworkRoomPlayer
 {
+    [SyncVar]
+    public string PlayerName;
+
+    // 서버에서 플레이어 이름 동기화
+    [Command]
+    public void CmdSetPlayerName(string newName)
+    {
+        PlayerName = newName;
+    }
+
     // 새로운 메서드: 기존 CmdChangeReadyState를 활용하고 커스텀 로직 추가
     [Command]
     public void ChangeReadyState(bool ready)
