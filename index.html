@@ -20,7 +20,7 @@
             overflow: hidden;
         }
 
-        /* 외부 컨테이너: 브라우저 전체 크기를 사용하고, 내부 콘텐츠를 중앙에 배치 */
+        /* 외부 컨테이너: 화면 전체를 사용하며, 내부 콘텐츠를 중앙에 배치 */
         #unity-container {
             display: flex;
             align-items: center;
@@ -31,20 +31,36 @@
             position: relative;
         }
 
-        /* 16:9 비율을 유지하는 래퍼 */
+        /* 기본적으로 16:9 비율을 유지하는 래퍼. 
+         미디어 쿼리를 통해 화면의 가로/세로 비율에 따라 크기를 조정 */
         .aspect-ratio-wrapper {
-            width: 100%;
-            height: auto;
-            aspect-ratio: 16 / 9;
-            /* 최신 브라우저에서 16:9 비율 강제 */
+            /* 기본값은 width:100vw일 때 계산한 높이 */
+            width: 100vw;
+            height: calc(100vw * 9 / 16);
         }
 
-        /* 캔버스가 래퍼에 꽉 차도록 */
+        /* 만약 화면이 (width/height) > (16/9)라면, 즉 화면이 너무 넓으면 높이를 기준으로 조정 */
+        @media (min-aspect-ratio: 16/9) {
+            .aspect-ratio-wrapper {
+                height: 100vh;
+                width: calc(100vh * 16 / 9);
+            }
+        }
+
+        /* 만약 화면이 (width/height) < (16/9)라면, 즉 화면이 너무 좁으면 너비를 기준으로 조정 */
+        @media (max-aspect-ratio: 16/9) {
+            .aspect-ratio-wrapper {
+                width: 100vw;
+                height: calc(100vw * 9 / 16);
+            }
+        }
+
+        /* 캔버스가 래퍼에 꽉 차도록 설정 */
         #unity-canvas {
             width: 100%;
             height: 100%;
-            display: block;
             background: #000;
+            display: block;
             object-fit: contain;
         }
 
@@ -70,7 +86,7 @@
 
 <body>
     <div id="unity-container">
-        <!-- 16:9 비율을 유지하는 래퍼 -->
+        <!-- 16:9 비율 유지 래퍼 -->
         <div class="aspect-ratio-wrapper">
             <canvas id="unity-canvas" tabindex="-1"></canvas>
         </div>
@@ -85,7 +101,7 @@
         <div id="unity-footer">
             <div id="unity-logo-title-footer"></div>
             <div id="unity-fullscreen-button"></div>
-            <div id="unity-build-title"></div>
+            <div id="unity-build-title">MCR Masters</div>
         </div>
     </div>
 
@@ -125,7 +141,6 @@
             showBanner: unityShowBanner,
         };
 
-        // 모바일 기기 감지: 모바일에서는 viewport 메타 태그와 클래스 적용
         if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
             var meta = document.createElement('meta');
             meta.name = 'viewport';
