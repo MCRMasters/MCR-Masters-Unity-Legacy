@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 2715962945074211608}
   - component: {fileID: 6996135421176964798}
-  - component: {fileID: 2203482217970152134}
   - component: {fileID: 1463190417251752636}
   - component: {fileID: 6743783811212822614}
+  - component: {fileID: 3667840098146443676}
   m_Layer: 0
   m_Name: RoomManager
   m_TagString: Untagged
@@ -55,7 +55,7 @@ MonoBehaviour:
   offlineScene: 
   onlineScene: Assets/Scenes/RoomScene.unity
   offlineSceneLoadDelay: 0
-  transport: {fileID: 2203482217970152134}
+  transport: {fileID: 3667840098146443676}
   networkAddress: localhost
   maxConnections: 100
   disconnectInactiveConnections: 0
@@ -153,35 +153,6 @@ MonoBehaviour:
   _allPlayersReady: 0
   clientIndex: 0
   RequiredPlayerCount: 4
---- !u!114 &2203482217970152134
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7148554449997493305}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b0fecffa3f624585964b0d0eb21b18e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  port: 9000
-  DualMode: 1
-  NoDelay: 1
-  Interval: 10
-  Timeout: 10000
-  RecvBufferSize: 7361536
-  SendBufferSize: 7361536
-  FastResend: 2
-  ReceiveWindowSize: 4096
-  SendWindowSize: 4096
-  MaxRetransmit: 40
-  MaximizeSocketBuffers: 1
-  ReliableMaxMessageSize: 297433
-  UnreliableMaxMessageSize: 1194
-  debugLog: 0
-  statisticsGUI: 1
-  statisticsLog: 0
 --- !u!114 &1463190417251752636
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -210,3 +181,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   targetAspect: 1.7777778
+  stableTime: 0.5
+--- !u!114 &3667840098146443676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7148554449997493305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0110f245bfcfc7d459681f7bd9ebc590, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxMessageSize: 16384
+  maxHandshakeSize: 16384
+  serverMaxMsgsPerTick: 10000
+  clientMaxMsgsPerTick: 1000
+  sendTimeout: 5000
+  receiveTimeout: 20000
+  noDelay: 1
+  sslEnabled: 0
+  sslProtocols: 3072
+  sslCertJson: ./cert.json
+  port: 9000
+  batchSend: 1
+  waitBeforeSend: 1
+  clientUseWss: 0
+  clientWebsocketSettings:
+    ClientPortOption: 0
+    CustomClientPort: 7777
+  minimumLogLevel: 3
