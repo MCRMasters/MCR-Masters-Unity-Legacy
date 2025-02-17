@@ -165,8 +165,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85f49632e84beec45b2293898ad1d18e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  offsetX: 0
-  offsetY: 0
+  offsetX: 810
+  offsetY: 540
   my_manager: {fileID: 6996135421176964798}
 --- !u!114 &6743783811212822614
 MonoBehaviour:
@@ -207,7 +207,7 @@ MonoBehaviour:
   port: 9000
   batchSend: 1
   waitBeforeSend: 1
-  clientUseWss: 0
+  clientUseWss: 1
   clientWebsocketSettings:
     ClientPortOption: 0
     CustomClientPort: 7777

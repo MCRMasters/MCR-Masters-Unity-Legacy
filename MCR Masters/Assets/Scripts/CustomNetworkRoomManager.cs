@@ -5,6 +5,13 @@ using UnityEngine;
 public class CustomNetworkRoomManager : NetworkRoomManager
 {
     public int RequiredPlayerCount = 4; // 플레이어 수를 조정 가능한 변수로 설정
+    CustomNetworkManagerHUD hud;
+
+
+    public override void Awake()
+    {
+        hud = GetComponent<CustomNetworkManagerHUD>();
+    }
 
     public override void Start()
     {

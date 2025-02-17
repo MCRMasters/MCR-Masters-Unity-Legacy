@@ -5,8 +5,6 @@ using TMPro;
 
 public class LobbyUI : MonoBehaviour
 {
-    public TMP_InputField playerNameInput; // 이름 입력 필드
-    public Button setNameButton;          // 이름 설정 버튼
     public Button readyButton;            // 준비 버튼
     private CustomNetworkRoomPlayer roomPlayer;
 
@@ -30,10 +28,7 @@ public class LobbyUI : MonoBehaviour
 
         // ReadyButton 및 PlayerNameInput 동적 찾기
         readyButton = GameObject.Find("ReadyButton")?.GetComponent<Button>();
-        playerNameInput = GameObject.Find("PlayerNameInput")?.GetComponent<TMP_InputField>();
-        setNameButton = GameObject.Find("SetNameButton")?.GetComponent<Button>();
-
-        if (readyButton == null || playerNameInput == null || setNameButton == null)
+        if (readyButton == null)
         {
             Debug.LogError("LobbyUI: UI elements not found. Check their names.");
             return;
@@ -41,7 +36,6 @@ public class LobbyUI : MonoBehaviour
 
         // 버튼 클릭 이벤트 추가
         readyButton.onClick.AddListener(OnReadyButtonClicked);
-        setNameButton.onClick.AddListener(OnSetNameClicked);
 
         // 초기 버튼 상태 설정
         UpdateButtonUI(false);
@@ -53,10 +47,6 @@ public class LobbyUI : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Space))
         {
             OnReadyButtonClicked();
-        }
-        if (Input.GetKeyDown(KeyCode.KeypadEnter))
-        {
-            OnSetNameClicked();
         }
     }
 
@@ -73,15 +63,6 @@ public class LobbyUI : MonoBehaviour
         }
     }
 
-    public void OnSetNameClicked()
-    {
-        if (roomPlayer != null && !string.IsNullOrWhiteSpace(playerNameInput.text))
-        {
-            // 입력한 이름을 서버로 전송
-            roomPlayer.CmdSetPlayerName(playerNameInput.text);
-            Debug.Log($"Player name set to: {playerNameInput.text}");
-        }
-    }
 
     void UpdateButtonUI(bool isReady)
     {
