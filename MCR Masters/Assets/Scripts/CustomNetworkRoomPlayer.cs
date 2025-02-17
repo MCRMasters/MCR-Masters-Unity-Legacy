@@ -27,6 +27,7 @@ public class CustomNetworkRoomPlayer : NetworkRoomPlayer
     public override void OnClientEnterRoom()
     {
         base.OnClientEnterRoom();
+        CmdSetPlayerName($"Player {index}");
         Debug.Log($"Player {index} entered the room.");
     }
 

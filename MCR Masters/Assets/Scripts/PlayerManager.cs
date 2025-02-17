@@ -95,6 +95,12 @@ public class PlayerManager : NetworkBehaviour
     public GameObject[] discardHandPrefabs;  // Animator가 포함된 Prefab 배열
     private Animator animator;
 
+    [Command]
+    public void CmdSetPlayerName(string newName)
+    {
+        PlayerName = newName;
+    }
+
     private void DestoryAllChildrenOfFuroFields()
     {
         DestroyAllChildren(PlayerFuroField);

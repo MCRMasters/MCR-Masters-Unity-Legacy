@@ -1279,7 +1279,7 @@ $"[Index: {index}, ActionType: {action.Type}, TileId: {action.TileId}, Priority:
             if (PlayerManagers[i] != null)
             {
                 PlayerManagers[i].PlayerIndex = indices[i];
-                PlayerManagers[i].PlayerName = $"Player {indices[i] + 1}";
+                //PlayerManagers[i].PlayerName = $"Player {indices[i] + 1}";
 
                 Debug.Log($"PlayerIndex: {PlayerManagers[i].PlayerIndex}, PlayerName: {PlayerManagers[i].PlayerName} 할당 완료");
             }

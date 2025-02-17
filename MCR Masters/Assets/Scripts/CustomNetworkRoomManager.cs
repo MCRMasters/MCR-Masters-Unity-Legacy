@@ -5,13 +5,54 @@ using UnityEngine;
 public class CustomNetworkRoomManager : NetworkRoomManager
 {
     public int RequiredPlayerCount = 4; // 플레이어 수를 조정 가능한 변수로 설정
-    CustomNetworkManagerHUD hud;
 
-
-    public override void Awake()
+    public override GameObject OnRoomServerCreateGamePlayer(NetworkConnectionToClient conn, GameObject roomPlayer)
     {
-        hud = GetComponent<CustomNetworkManagerHUD>();
+        // 게임 플레이어 프리팹으로부터 새 인스턴스 생성
+        GameObject gamePlayer = Instantiate(playerPrefab);
+
+        // roomPlayer에서 CustomNetworkRoomPlayer 컴포넌트 가져오기
+        CustomNetworkRoomPlayer roomPlayerComponent = roomPlayer.GetComponent<CustomNetworkRoomPlayer>();
+
+        // 새로 생성된 gamePlayer에서도 CustomNetworkRoomPlayer 컴포넌트를 가져옵니다.
+        // (만약 게임 플레이어 스크립트가 다르다면, 그 스크립트 이름으로 교체하세요.)
+        PlayerManager gamePlayerComponent = gamePlayer.GetComponent<PlayerManager>();
+
+        // 만약 두 컴포넌트가 모두 존재한다면, roomPlayer의 PlayerName 값을 복사합니다.
+        if (roomPlayerComponent != null && gamePlayerComponent != null)
+        {
+            Debug.Log($"Set PlayerName: {roomPlayerComponent.PlayerName}");
+            gamePlayerComponent.PlayerName = roomPlayerComponent.PlayerName;
+        }
+        else
+        {
+            Debug.LogWarning("CustomNetworkRoomPlayer 컴포넌트를 찾지 못했습니다.");
+        }
+        return gamePlayer;
     }
+
+    public override bool OnRoomServerSceneLoadedForPlayer(NetworkConnectionToClient conn, GameObject roomPlayer, GameObject gamePlayer)
+    {
+        // roomPlayer에서 CustomNetworkRoomPlayer 컴포넌트 가져오기
+        CustomNetworkRoomPlayer roomPlayerComponent = roomPlayer.GetComponent<CustomNetworkRoomPlayer>();
+
+        // 새로 생성된 gamePlayer에서도 CustomNetworkRoomPlayer 컴포넌트를 가져옵니다.
+        // (만약 게임 플레이어 스크립트가 다르다면, 그 스크립트 이름으로 교체하세요.)
+        PlayerManager gamePlayerComponent = gamePlayer.GetComponent<PlayerManager>();
+
+        // 만약 두 컴포넌트가 모두 존재한다면, roomPlayer의 PlayerName 값을 복사합니다.
+        if (roomPlayerComponent != null && gamePlayerComponent != null)
+        {
+            Debug.Log($"Set PlayerName: {roomPlayerComponent.PlayerName}");
+            gamePlayerComponent.PlayerName = roomPlayerComponent.PlayerName;
+        }
+        else
+        {
+            Debug.LogWarning("CustomNetworkRoomPlayer 컴포넌트를 찾지 못했습니다.");
+        }
+        return true;
+    }
+
 
     public override void Start()
     {
@@ -25,7 +66,7 @@ public class CustomNetworkRoomManager : NetworkRoomManager
         }
         else // 클라이언트 실행
         {
-            networkAddress = "192.168.115.189";
+            networkAddress = "";
             Debug.Log("Client mode. Use the HUD to enter IP and connect.");
         }
     }
