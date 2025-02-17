@@ -1,31 +1,87 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
     <meta charset="utf-8" />
-    <title>MCR Masters</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>My WebGL Custom Loader</title>
+    <style>
+        /* 원하는 스타일 */
+        #myCanvas {
+            width: 960px;
+            height: 600px;
+            background: #000;
+        }
 
-    <!-- 별도 CSS로 스타일을 관리 -->
-    <link rel="stylesheet" href="style.css" />
+        #loadingBar {
+            width: 50%;
+            height: 20px;
+            background: #aaa;
+            margin: 10px auto;
+        }
+
+        #loadingFill {
+            width: 0%;
+            height: 100%;
+            background: #4caf50;
+        }
+    </style>
 </head>
 
 <body>
-    <!-- Unity가 캔버스와 스크립트를 삽입할 컨테이너 -->
-    <div id="unity-container">
-        <!-- UNITY_CANVAS 플레이스홀더:
-         유니티 빌드시 <canvas>가 삽입됨 -->
-        UNITY_CANVAS
 
-        <!-- 로딩 중 표시하는 Progress Bar -->
-        <div id="unity-progress-bar">
-            <div id="unity-progress-bar-fill"></div>
-        </div>
+    <canvas id="myCanvas"></canvas>
+    <div id="loadingBar">
+        <div id="loadingFill"></div>
     </div>
 
-    <!-- SCRIPT 플레이스홀더:
-       유니티 로더 스크립트, wasm, data 파일 등 참조 -->
-    SCRIPT
+    <script>
+        // 빌드 폴더 경로 (data, framework, code 등)
+        const buildUrl = "Build";
+
+        // Unity 빌드 설정 (템플릿 매크로를 써도 되고, 직접 문자열을 써도 됨)
+        const config = {
+            dataUrl: buildUrl + "/Build.data",
+            frameworkUrl: buildUrl + "/Build.framework.js",
+            codeUrl: buildUrl + "/Build.wasm",
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "MyCompany",
+            productName: "MyProduct",
+            productVersion: "1.0",
+        };
+
+        // onProgress 콜백
+        function onProgress(progress) {
+            // 0 <= progress <= 1
+            document.getElementById('loadingFill').style.width = (progress * 100) + '%';
+        }
+
+        // onSuccess
+        function onSuccess(unityInstance) {
+            console.log("Unity Instance created:", unityInstance);
+            // 로딩 완료 후 필요한 로직(예: UI 숨기기, 안내 문구 등)
+        }
+
+        // onError
+        function onError(errorMsg) {
+            console.error("Unity Instance error:", errorMsg);
+            alert("Failed to load Unity content!");
+        }
+
+        // canvas 요소
+        const canvas = document.getElementById('myCanvas');
+
+        // 빌드 로더 스크립트 추가
+        const loaderScript = document.createElement('script');
+        loaderScript.src = buildUrl + "/Build.loader.js";
+        loaderScript.onload = () => {
+            // 로더 스크립트가 로드되면 createUnityInstance() 함수 사용 가능
+            createUnityInstance(canvas, config, onProgress)
+                .then(onSuccess)
+                .catch(onError);
+        };
+        document.body.appendChild(loaderScript);
+
+    </script>
 
 </body>
 
