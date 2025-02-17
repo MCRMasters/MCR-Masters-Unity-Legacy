@@ -36,6 +36,8 @@ public class PlayerManager : NetworkBehaviour
     private List<int>[] EnemyKawaTiles = new List<int>[3];
     private int[] EnemyIndexMap = new int[3];
 
+    public GameObject actionSoundManager;    
+    private ActionSoundManager soundManager;
 
 
     private static ServerManager serverManager;
@@ -240,6 +242,7 @@ public class PlayerManager : NetworkBehaviour
 
     public void PerformKan(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded, KanType kanType)
     {
+        soundManager.PlayActionSound("kan");
         if (playerIndex == PlayerIndex)
         {
             animator = discardHandPrefabs[3].GetComponent<Animator>();
@@ -630,6 +633,7 @@ public class PlayerManager : NetworkBehaviour
 
     public void PerformPon(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded)
     {
+        soundManager.PlayActionSound("pon");
         if (playerIndex == PlayerIndex)
         {
             animator = discardHandPrefabs[3].GetComponent<Animator>();
@@ -837,6 +841,7 @@ public class PlayerManager : NetworkBehaviour
     
     public void PerformChii(ActionPriorityInfo action, int sourceTileId, int playerIndex, int sourcePlayerIndex, bool isDiscarded)
     {
+        soundManager.PlayActionSound("chii");
         if (playerIndex == PlayerIndex)
         {
             animator = discardHandPrefabs[3].GetComponent<Animator>();
@@ -1130,7 +1135,7 @@ public class PlayerManager : NetworkBehaviour
         {
             Destroy(child.gameObject);
         }
-        hand.ClosedTiles[hand.WinningTile] -= 1;
+        //hand.ClosedTiles[hand.WinningTile] -= 1;
 
         float currentXPosition = 0f;
         foreach (BlockData block in hand.CallBlocks)
@@ -1408,6 +1413,8 @@ public class PlayerManager : NetworkBehaviour
 
     public IEnumerator PlayFuEffectCoroutine(PlayerManager HuPlayerManager, HandData hand, int score)
     {
+        soundManager.PlayActionSound("hu");
+
         Debug.Log($"[PlayFuEffectCoroutine] 후 효과 시작 - 플레이어: {HuPlayerManager.PlayerName}, 점수: {score}");
 
         if (HuPlayerManager.PlayerIndex != PlayerIndex)
@@ -1953,6 +1960,10 @@ public class PlayerManager : NetworkBehaviour
         FuEffectAnimatorPrefabs[0] = GameObject.Find("4_0");
         FuEffectAnimatorPrefabs[1] = GameObject.Find("DDing");
         //animator = GetComponent<Animator>();
+
+        actionSoundManager = GameObject.Find("ActionSoundManager");
+
+        soundManager = actionSoundManager.GetComponent<ActionSoundManager>();
 
         DeleteButtons();
     }
