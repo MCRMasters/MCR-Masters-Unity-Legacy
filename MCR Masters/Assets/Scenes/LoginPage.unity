@@ -1721,6 +1721,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1632869422}
   m_CullTransparentMesh: 1
+--- !u!1 &1638082285
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1638082287}
+  - component: {fileID: 1638082286}
+  m_Layer: 0
+  m_Name: GoogleAuth
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1638082286
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1638082285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0478580282fd24376913ed8570dba639, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  getAuthUrlEndpoint: http://0.0.0.0:8000/api/v1/auth/login/google
+  sendCodeEndpoint: http://0.0.0.0:8000/api/v1/auth/login/google/callback
+--- !u!4 &1638082287
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1638082285}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.955431, y: -0.3500824, z: 1187.0734}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1908535949
 GameObject:
   m_ObjectHideFlags: 0
@@ -1733,8 +1779,9 @@ GameObject:
   - component: {fileID: 1908535953}
   - component: {fileID: 1908535952}
   - component: {fileID: 1908535951}
+  - component: {fileID: 1908535954}
   m_Layer: 5
-  m_Name: Button (3)
+  m_Name: Google
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1842,6 +1889,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1908535949}
   m_CullTransparentMesh: 1
+--- !u!114 &1908535954
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1908535949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 63e3695cb895644c5aeb4ab4651f56f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  googleAuthManager: {fileID: 1638082286}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1849,3 +1909,4 @@ SceneRoots:
   - {fileID: 1531996320}
   - {fileID: 19187864}
   - {fileID: 998201397}
+  - {fileID: 1638082287}

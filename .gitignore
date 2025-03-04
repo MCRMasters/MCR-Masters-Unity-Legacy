@@ -90,3 +90,10 @@ MCR Masters/.vsconfig
 
 # Ignore Build files
 MCR Masters/Build
+
+
+### macOS ###
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
